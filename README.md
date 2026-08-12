@@ -14,4 +14,6 @@ Client redline (pick one product shape; as-is is the baseline):
 
 ## Status
 
-Scaffold + flow docs. Next: decide UI surface (admin-only vs review mock).
+Scaffold + flow docs.
+
+**Next chat:** [TODO — clickable demo prototype](./docs/TODO-demo-prototype.md) (phone storyboard → Vercel).
