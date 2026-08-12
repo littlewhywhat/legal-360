@@ -1,0 +1,11 @@
+{
+  "name": "legal-360",
+  "private": true,
+  "packageManager": "pnpm@10.33.3",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "build": "pnpm --filter web build",
+    "lint": "pnpm --filter web lint",
+    "start": "pnpm --filter web start"
+  }
+}
