@@ -24,8 +24,7 @@ pnpm --filter web dev   # or: just web
 **TODO / scope:** [docs/TODO-demo-prototype.md](./docs/TODO-demo-prototype.md)
 
 Vercel (preview/prod):
-- Framework Preset: **Next.js** (not Other / static)
-- Root Directory: `apps/web`
-- Include files outside root directory: on (pnpm workspace)
-- **Output Directory: leave empty** — do not set `public` (that folder is static assets, not the Next build output)
-- `apps/web/vercel.json` sets install/build via pnpm from the monorepo root
+- Demo is a **static export** (`apps/web/out`) — works with Root Directory = repo root
+- Root `vercel.json`: `pnpm --filter web build` → `outputDirectory: apps/web/out`
+- Prefer: Framework Other/static is fine; do **not** set Output Directory to `public` (override via vercel.json)
+- Alt: Root Directory `apps/web` + include files outside root → uses `apps/web/vercel.json` (`out`)
