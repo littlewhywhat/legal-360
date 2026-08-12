@@ -4,6 +4,10 @@ Playbook-aware client redline triage.
 
 Monorepo layout and tooling: [docs/monorepo-layout.md](./docs/monorepo-layout.md).
 
+## Flows
+
+- [Client redline review](./docs/flows/client-redline-review.md)
+
 ## Status
 
-Scaffold only. Next: client-redline user flow doc, then UI mock.
+Scaffold + flow doc. Next: UI mock.
