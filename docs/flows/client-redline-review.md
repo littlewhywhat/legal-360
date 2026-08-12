@@ -1,4 +1,8 @@
-# Client redline review flow
+# Client redline — in-app review UI (variant)
+
+Alternate shape: lawyer works decisions **inside the app**, then pushes chosen edits to Google Docs for supervisor approval.
+
+Preferred direction is now the thinner [auto Docs + Slack flow](./client-redline-auto-slack.md). Kept for contrast and if we still need a rich analysis screen.
 
 Scope: **client-proposed edits only** — our draft → their redline → lawyer decision → internal Google Docs approval → reply artifact.
 
