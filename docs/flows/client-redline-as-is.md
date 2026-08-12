@@ -9,23 +9,23 @@ sequenceDiagram
   participant Sales
   participant Lawyer
   participant Client
-  participant Mail as Email / Word
-  participant Docs as Google Docs (ad hoc)
+  participant Mail as Email and Word
+  participant Docs as Google Docs ad hoc
   participant Sup as Supervisor
 
-  Sales->>Lawyer: Deal closed — need MSA / order form
-  Lawyer->>Docs: Copy standard template (or Word)
-  Lawyer->>Client: Email PDF/DOCX v1
-  Client->>Mail: Reply with redline (tracked changes)
-  Mail->>Lawyer: Inbox — manual triage
-  Lawyer->>Lawyer: Read redline vs playbook (eyes)
-  opt Unsure / outside authority
-    Lawyer->>Sup: Slack / email / meeting
-    Sup->>Lawyer: Verbal / thread approval
+  Sales->>Lawyer: Deal closed - need MSA or order form
+  Lawyer->>Docs: Copy standard template or Word
+  Lawyer->>Client: Email PDF or DOCX v1
+  Client->>Mail: Reply with redline tracked changes
+  Mail->>Lawyer: Inbox - manual triage
+  Lawyer->>Lawyer: Read redline vs playbook by eye
+  opt Unsure or outside authority
+    Lawyer->>Sup: Slack or email or meeting
+    Sup->>Lawyer: Verbal or thread approval
   end
-  Lawyer->>Mail: Edit counter in Word (or paste into Docs)
-  Lawyer->>Client: Email v2 + short note
-  Note over Lawyer,Client: Repeat N rounds until signed<br/>No shared state, no metrics, no audit of why
+  Lawyer->>Mail: Edit counter in Word or paste into Docs
+  Lawyer->>Client: Email v2 plus short note
+  Note over Lawyer,Client: Repeat N rounds until signed - no shared state or metrics
 ```
 
 ## Pain

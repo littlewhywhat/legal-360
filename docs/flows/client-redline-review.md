@@ -13,36 +13,36 @@ Client never gets a Google Docs link. Docs is the internal collaboration / super
 ```mermaid
 sequenceDiagram
   participant Client
-  participant Inbox as Intake (email/upload)
+  participant Inbox as Intake email or upload
   participant App as Legal app
   participant Lawyer
-  participant Docs as Google Docs (internal)
+  participant Docs as Google Docs internal
   participant Sup as Supervisor
 
-  Note over Lawyer,Docs: v1 = our standard draft<br/>(Docs internal, not shared with client)
+  Note over Lawyer,Docs: v1 is our standard draft - Docs internal, not shared with client
 
-  Lawyer->>Client: Send v1 as PDF/DOCX export
-  Client->>Inbox: Reply with redline (tracked changes / markup)
-  Inbox->>App: Ingest + diff vs our v1
-  App->>Lawyer: Notify: N proposed edits
+  Lawyer->>Client: Send v1 as PDF or DOCX export
+  Client->>Inbox: Reply with redline tracked changes
+  Inbox->>App: Ingest and diff vs our v1
+  App->>Lawyer: Notify - N proposed edits
 
   Lawyer->>App: Open analysis
-  Note over App: Per edit:<br/>their change · risk if accept · AI alternative
+  Note over App: Per edit - their change, risk if accept, AI alternative
 
   loop Each client proposal
-    Lawyer->>App: Accept / Reject / Use AI alt
+    Lawyer->>App: Accept or Reject or Use AI alt
   end
 
-  App->>Docs: Apply chosen edits as Suggestions<br/>+ comment @supervisor
-  App->>Lawyer: Status: awaiting internal approval
-  Sup->>Docs: Review suggestions · accept/reject
-  Docs-->>App: Sync (suggestions resolved / revisionId)
+  App->>Docs: Apply chosen edits as Suggestions plus @supervisor comment
+  App->>Lawyer: Status - awaiting internal approval
+  Sup->>Docs: Review suggestions - accept or reject
+  Docs-->>App: Sync suggestions resolved and revisionId
   App->>Lawyer: Next actions ready
 
   alt All internal decisions done
     App->>Lawyer: Export clean v2
-    Lawyer->>Client: Send v2 (file), not Docs link
-  else Still open / need another round
+    Lawyer->>Client: Send v2 file, not Docs link
+  else Still open or need another round
     App->>Lawyer: Remaining rejects or new counter package
   end
 ```

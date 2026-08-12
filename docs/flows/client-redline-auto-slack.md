@@ -11,29 +11,28 @@ Related: [as-is today](./client-redline-as-is.md) · [in-app review UI variant](
 ```mermaid
 sequenceDiagram
   participant Client
-  participant Inbox as Intake (email)
+  participant Inbox as Intake email
   participant App as Legal app
-  participant Docs as Google Docs (SoT)
+  participant Docs as Google Docs SoT
   participant Slack
   participant Sup as Supervisor
 
-  Note over Docs: v1 already sent as file export<br/>Docs stays internal
+  Note over Docs: v1 already sent as file export - Docs stays internal
 
-  Client->>Inbox: Redline reply (attachment)
-  Inbox->>App: Ingest · diff vs our v1 · playbook judge
-  App->>Docs: Comments / suggestions on matching spans<br/>@supervisor per open item
-  App->>Slack: Notify + deep link to Docs<br/>buttons: Accept / Reject / AI alt (optional prompt)
-  Sup->>Slack: Choose action (or edit in Docs)
+  Client->>Inbox: Redline reply with attachment
+  Inbox->>App: Ingest, diff vs v1, playbook judge
+  App->>Docs: Comments and suggestions on matching spans, @supervisor
+  App->>Slack: Notify with Docs link and action buttons
+  Sup->>Slack: Choose action or edit in Docs
   Slack->>App: Decision webhook
-  App->>Docs: Apply / reject suggestion · resolve comment
-  Note over App,Docs: Loop until no open suggestions<br/>(or Sup finishes in Docs; App syncs)
+  App->>Docs: Apply or reject suggestion, resolve comment
+  Note over App,Docs: Loop until no open suggestions, or sync after Sup finishes in Docs
 
-  App->>App: Build reply package + summary<br/>(accepted as-is / with our counters)
-  App->>Client: Email v2 file — never Docs link
-  App->>Slack: Thread update — sent · waiting for next round
+  App->>Client: Email v2 file - never Docs link - plus short summary
+  App->>Slack: Thread update - sent, waiting for next round
 
-  opt Exception / phone call / stop
-    Note over App: Admin: adjust Docs (SoT) · sync<br/>or [Close thread — stop auto-reply]
+  opt Exception or phone call or stop
+    Note over App: Admin adjusts Docs then sync, or Close thread to stop auto-reply
   end
 ```
 
