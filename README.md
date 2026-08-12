@@ -14,6 +14,7 @@ Client redline (pick one product shape; as-is is the baseline):
 
 ## Status
 
+<<<<<<< HEAD
 Clickable phone storyboard demo in `apps/web` (tap-through; no real integrations).
 
 ```bash
@@ -28,3 +29,8 @@ Vercel (preview/prod):
 - Root `vercel.json`: `pnpm --filter web build` → `outputDirectory: apps/web/out`
 - Prefer: Framework Other/static is fine; do **not** set Output Directory to `public` (override via vercel.json)
 - Alt: Root Directory `apps/web` + include files outside root → uses `apps/web/vercel.json` (`out`)
+=======
+Scaffold + flow docs.
+
+**Next chat:** [TODO — clickable demo prototype](./docs/TODO-demo-prototype.md) (phone storyboard → Vercel).
+>>>>>>> origin/main
