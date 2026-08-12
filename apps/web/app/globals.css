@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #07110e;
+  --foreground: #ecfdf5;
+  --stage-fg: #ecfdf5;
+  --stage-muted: #8ba89a;
+  --stage-accent: #34d399;
+  --stage-bar: #1a2e26;
+  --phone-shell: #121816;
+  --phone-edge: #2a3d34;
+  --phone-notch: #0a100e;
+  --screen-bg: #ffffff;
+  --screen-fg: #171717;
+  --screen-muted: #6b7280;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-slide-up {
+    animation: none !important;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.45s ease-out both;
+}
+
+body {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% -10%, #143d32 0%, transparent 55%),
+    radial-gradient(ellipse 50% 40% at 100% 100%, #0c2a22 0%, transparent 50%),
+    var(--background);
+  color: var(--foreground);
+  min-height: 100vh;
+}

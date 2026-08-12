@@ -1,0 +1,291 @@
+/** Hardcoded Helios MSA demo script — no API. */
+
+export type Device = "client" | "supervisor" | "system";
+export type AppSkin = "email" | "slack" | "docs" | "system";
+
+export type Choice = {
+  id: string;
+  label: string;
+  /** Scene id to jump to */
+  next: string;
+  variant?: "primary" | "danger" | "ghost" | "composer";
+};
+
+export type Scene = {
+  id: string;
+  step: number;
+  totalSteps: number;
+  device: Device;
+  app: AppSkin;
+  title: string;
+  /** Hint under the phone */
+  hint: string;
+  /** Advance on empty tap if no choices / single primary */
+  next?: string;
+  choices?: Choice[];
+  payload: Record<string, unknown>;
+};
+
+export const TOTAL_STEPS = 8;
+
+export const scenes: Scene[] = [
+  {
+    id: "s1-client-msa",
+    step: 1,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "email",
+    title: "Client inbox",
+    hint: "Tap the message to open",
+    next: "s2-client-redline",
+    payload: {
+      mode: "inbox",
+      from: "legal@acme.example",
+      subject: "Helios × Acme — MSA v1 for review",
+      preview: "Attached: Helios_MSA_v1.pdf — our standard draft.",
+      body: [
+        "Hi Jordan,",
+        "Attached is our standard MSA (v1) for Helios Energy. Happy to walk through any questions.",
+        "— Priya, Acme Legal",
+      ],
+      attachment: "Helios_MSA_v1.pdf",
+    },
+  },
+  {
+    id: "s2-client-redline",
+    step: 2,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "email",
+    title: "Client reply",
+    hint: "Tap Send to return the redline",
+    choices: [
+      { id: "send", label: "Send", next: "s3-slack-ping", variant: "primary" },
+    ],
+    payload: {
+      mode: "compose",
+      to: "legal@acme.example",
+      subject: "Re: Helios × Acme — MSA v1 for review",
+      body: [
+        "Thanks Priya — marked up a few points:",
+        "• Liability cap → fees paid in prior 12 months (1×)",
+        "• Indemnity: broaden IP carve-out",
+        "• Termination for convenience: 60 days",
+        "• Governing law: California",
+        "Redline attached.",
+      ],
+      attachment: "Helios_MSA_v1_CLIENT_REDLINE.docx",
+    },
+  },
+  {
+    id: "s3-slack-ping",
+    step: 3,
+    totalSteps: TOTAL_STEPS,
+    device: "supervisor",
+    app: "slack",
+    title: "Supervisor Slack",
+    hint: "Tap the Legal 360 notification",
+    next: "s4-slack-decide",
+    payload: {
+      mode: "notification",
+      channel: "#legal-intake",
+      bot: "Legal 360",
+      text: "New client redline on Helios MSA — 4 playbook flags. Open thread to decide.",
+    },
+  },
+  {
+    id: "s4-slack-decide",
+    step: 4,
+    totalSteps: TOTAL_STEPS,
+    device: "supervisor",
+    app: "slack",
+    title: "Decide in Slack",
+    hint: "Accept, Reject, or reply in the thread",
+    choices: [
+      { id: "accept", label: "Accept", next: "s6-docs-flash", variant: "primary" },
+      { id: "reject", label: "Reject", next: "s4b-rejected", variant: "danger" },
+      {
+        id: "reply",
+        label: "Reply in thread…",
+        next: "s5-slack-reply",
+        variant: "composer",
+      },
+    ],
+    payload: {
+      mode: "actions",
+      channel: "#legal-intake",
+      bot: "Legal 360",
+      docLink: "docs.google.com/…/Helios_MSA",
+      flags: [
+        {
+          id: "liability",
+          label: "Liability cap",
+          client: "1× fees (12 mo)",
+          playbook: "Floor 2× — counter",
+          verdict: "counter",
+        },
+        {
+          id: "indemnity",
+          label: "IP indemnity",
+          client: "Broaden carve-out",
+          playbook: "OK if mutual",
+          verdict: "ok",
+        },
+        {
+          id: "term",
+          label: "Termination",
+          client: "60 days convenience",
+          playbook: "Max 30 — counter",
+          verdict: "counter",
+        },
+        {
+          id: "gov",
+          label: "Governing law",
+          client: "California",
+          playbook: "Prefer Delaware",
+          verdict: "counter",
+        },
+      ],
+    },
+  },
+  {
+    id: "s4b-rejected",
+    step: 4,
+    totalSteps: TOTAL_STEPS,
+    device: "supervisor",
+    app: "slack",
+    title: "Rejected",
+    hint: "Tap to restart the demo",
+    next: "s1-client-msa",
+    payload: {
+      mode: "rejected",
+      channel: "#legal-intake",
+      bot: "Legal 360",
+      text: "Marked rejected. Thread stays open — no auto-email to client.",
+    },
+  },
+  {
+    id: "s5-slack-reply",
+    step: 5,
+    totalSteps: TOTAL_STEPS,
+    device: "supervisor",
+    app: "slack",
+    title: "Reply in thread",
+    hint: "Send your tweak, then Add suggestion",
+    payload: {
+      mode: "thread-reply",
+      channel: "#legal-intake",
+      bot: "Legal 360",
+      phases: [
+        {
+          id: "compose",
+          you: "For liability, offer 2× fees and keep DE law — push back on CA.",
+          cta: "Send",
+        },
+        {
+          id: "bot",
+          botReply:
+            "Proposed suggestion on §8 Liability:\n“Supplier’s aggregate liability shall not exceed two times (2×) the fees paid in the twelve (12) months preceding the claim. Governing law remains Delaware.”",
+          cta: "Add suggestion",
+        },
+      ],
+    },
+    choices: [
+      {
+        id: "add-suggestion",
+        label: "Add suggestion",
+        next: "s6-docs-flash",
+        variant: "primary",
+      },
+    ],
+  },
+  {
+    id: "s6-docs-flash",
+    step: 6,
+    totalSteps: TOTAL_STEPS,
+    device: "supervisor",
+    app: "docs",
+    title: "Docs suggestion",
+    hint: "Tap to continue — agent applied the suggestion",
+    next: "s7-client-summary",
+    payload: {
+      docTitle: "Helios_MSA (internal)",
+      suggestion:
+        "§8 Liability — aggregate cap = 2× fees (12 mo); governing law Delaware.",
+      status: "Suggestion added · @priya",
+    },
+  },
+  {
+    id: "s7-client-summary",
+    step: 7,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "email",
+    title: "Client summary",
+    hint: "Tap OK to accept the counters",
+    choices: [
+      { id: "ok", label: "OK — looks good", next: "s8-docusign", variant: "primary" },
+    ],
+    payload: {
+      mode: "inbox",
+      from: "legal@acme.example",
+      subject: "Helios MSA v2 — summary of changes",
+      preview: "Accepted with counters · file attached",
+      body: [
+        "Hi Jordan,",
+        "Round summary:",
+        "• Liability: countered at 2× fees (12 mo)",
+        "• IP indemnity: accepted (mutual)",
+        "• Termination: countered at 30 days",
+        "• Governing law: kept Delaware",
+        "Updated file attached. Reply OK to proceed to signature.",
+        "— Priya",
+      ],
+      attachment: "Helios_MSA_v2.pdf",
+    },
+  },
+  {
+    id: "s8-docusign",
+    step: 8,
+    totalSteps: TOTAL_STEPS,
+    device: "system",
+    app: "system",
+    title: "DocuSign",
+    hint: "Create the final envelope?",
+    choices: [
+      {
+        id: "yes",
+        label: "Yes — create in DocuSign",
+        next: "s8-finale",
+        variant: "primary",
+      },
+    ],
+    payload: {
+      mode: "ask",
+      headline: "Draft approved",
+      question: "Create final in DocuSign?",
+    },
+  },
+  {
+    id: "s8-finale",
+    step: 8,
+    totalSteps: TOTAL_STEPS,
+    device: "system",
+    app: "system",
+    title: "Envelope sent",
+    hint: "Tap to replay from the start",
+    next: "s1-client-msa",
+    payload: {
+      mode: "finale",
+      headline: "Envelope sent",
+      detail: "Helios MSA v2 → DocuSign · waiting on signatures",
+    },
+  },
+];
+
+export const sceneById = Object.fromEntries(scenes.map((s) => [s.id, s])) as Record<
+  string,
+  Scene
+>;
+
+export const FIRST_SCENE_ID = scenes[0].id;
