@@ -30,7 +30,6 @@ sequenceDiagram
 
 ## Pain
 
-- Each round is a stack of **manual** steps: pull the redline from email, eyeball it against the playbook, request approval when unsure, apply counters, send the next file.
-- Playbook check is ad hoc — slow and inconsistent across lawyers.
-- Approvals live in Slack/email threads with no durable decision log.
-- Easy to lose which round is open and what was last emailed to the client.
+- Each round is a stack of **manual** steps: pull the redline from email, eyeball it against the playbook, request approval when unsure, send the next file.
+- No single source of truth - communication happens in email, slack, Google docs comments
+- Requires a lawyer who preprocesses and provides context for Supervisor approval
