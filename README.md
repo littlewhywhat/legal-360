@@ -23,4 +23,9 @@ pnpm --filter web dev   # or: just web
 
 **TODO / scope:** [docs/TODO-demo-prototype.md](./docs/TODO-demo-prototype.md)
 
-Vercel: set Root Directory to `apps/web`, include files outside root (pnpm workspace). Prod URL TBD after first deploy.
+Vercel (preview/prod):
+- Framework Preset: **Next.js** (not Other / static)
+- Root Directory: `apps/web`
+- Include files outside root directory: on (pnpm workspace)
+- **Output Directory: leave empty** — do not set `public` (that folder is static assets, not the Next build output)
+- `apps/web/vercel.json` sets install/build via pnpm from the monorepo root
