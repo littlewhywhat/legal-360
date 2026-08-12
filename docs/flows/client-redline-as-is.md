@@ -30,12 +30,6 @@ sequenceDiagram
 
 ## Pain
 
-- Redline vs playbook is manual; decisions inconsistent across lawyers.
-- Supervisor approval lives in Slack threads — hard to reconstruct later.
-- Client never sees Docs; internal copy often drifts from what was emailed.
-- No calendar of open rounds; Sales asks “where is the MSA?” into the void.
-- No measure of which positions we concede most.
-
-## What exists
-
-CLM / DocuSign for signature storage after the fact. The **negotiation rounds** are mostly email + Word + human memory.
+- Each round is a stack of **manual** steps: pull the redline from email, eyeball it against the playbook, request approval when unsure, send the next file.
+- No single source of truth - communication happens in email, slack, Google docs comments
+- Requires a lawyer who preprocesses and provides context for Supervisor approval

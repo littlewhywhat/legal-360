@@ -1,10 +1,10 @@
 # Client redline — auto (Docs + Slack)
 
-Preferred product shape: **minimal custom review UI**. App ingests the client redline, annotates the internal Google Doc, notifies the supervisor in Slack; after decisions resolve, app exports and emails the client with a short summary.
+App ingests the client redline, annotates the internal Google Doc, notifies the supervisor in Slack; after decisions resolve, app exports and emails the client with a short summary.
 
 In-app screens stay for **admin / exceptions** (phone call from client, stuck thread, force-close), not the happy path.
 
-Related: [as-is today](./client-redline-as-is.md) · [in-app review UI variant](./client-redline-review.md)
+Related: [as-is today](./client-redline-as-is.md)
 
 ## Sequence
 
@@ -54,16 +54,3 @@ sequenceDiagram
 | Email | Only client-facing channel (send / receive files) |
 | App | Ingest, judge vs playbook, Docs+Slack adapters, audit, auto-reply, admin kill-switch |
 | Admin UI | Exceptions, force-close thread, inspect audit — not day-to-day review |
-
-## Why this over a big in-app editor
-
-- Matches how legal already collaborates (Docs + Slack).
-- FDE story: orchestrate existing tools; custom UI only where gaps are.
-- Audit trail = Docs history + app decision log + Slack actions.
-- Still need a thin admin surface: phone-driven edits, stuck rounds, stop auto-email.
-
-## Open product choices
-
-- Slack buttons for legal accept/reject: who is authorized, idempotency, full audit text in-app even if clicked in Slack.
-- Auto-send to client: only after **all** open items resolved, or after explicit “Send round” in Slack/admin.
-- AI alt from Slack: ephemeral modal / prompt → new suggestion on same span, still needs supervisor confirm before send.
