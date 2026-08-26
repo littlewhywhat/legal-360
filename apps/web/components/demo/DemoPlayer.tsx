@@ -2,12 +2,7 @@
 
 import { useCallback, useEffect, useMemo } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import {
-  FIRST_SCENE_ID,
-  sceneById,
-  type Choice,
-  type Scene,
-} from "@/content/demo-script";
+import type { Choice, DemoCase, Scene } from "@demo/runtime";
 import { PhoneFrame } from "./PhoneFrame";
 import { StepStrip } from "./StepStrip";
 import { EmailScene } from "./EmailScene";
@@ -26,14 +21,15 @@ function deviceLabel(scene: Scene): string {
   }
 }
 
-export function DemoPlayer() {
+export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const paramScene = searchParams.get("s");
+  const { sceneById, firstSceneId } = demoCase;
 
   const sceneId =
-    paramScene && sceneById[paramScene] ? paramScene : FIRST_SCENE_ID;
+    paramScene && sceneById[paramScene] ? paramScene : firstSceneId;
   const scene = sceneById[sceneId];
 
   const go = useCallback(
@@ -43,7 +39,7 @@ export function DemoPlayer() {
       params.set("s", nextId);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, searchParams],
+    [pathname, router, sceneById, searchParams],
   );
 
   const advance = useCallback(() => {
@@ -63,8 +59,7 @@ export function DemoPlayer() {
         const hasBlockingChoices =
           !!scene.choices &&
           scene.choices.length > 0 &&
-          scene.app !== "email" &&
-          scene.id !== "s8-docusign";
+          scene.app !== "email";
         if (scene.next && !hasBlockingChoices) {
           e.preventDefault();
           advance();
@@ -72,12 +67,12 @@ export function DemoPlayer() {
       }
       if (e.key === "Home") {
         e.preventDefault();
-        go(FIRST_SCENE_ID);
+        go(firstSceneId);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, go, scene]);
+  }, [advance, firstSceneId, go, scene]);
 
   const primaryChoice = useMemo(
     () => scene.choices?.find((c) => c.variant === "primary"),
@@ -126,7 +121,7 @@ export function DemoPlayer() {
       <div className="flex items-center gap-3 text-xs text-[var(--stage-muted)]">
         <button
           type="button"
-          onClick={() => go(FIRST_SCENE_ID)}
+          onClick={() => go(firstSceneId)}
           className="rounded-md px-2 py-1 underline-offset-2 hover:text-[var(--stage-fg)] hover:underline"
         >
           Reset

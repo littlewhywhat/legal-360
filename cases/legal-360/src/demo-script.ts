@@ -1,30 +1,4 @@
-/** Hardcoded Helios MSA demo script — no API. */
-
-export type Device = "client" | "supervisor" | "system";
-export type AppSkin = "email" | "slack" | "docs" | "system";
-
-export type Choice = {
-  id: string;
-  label: string;
-  /** Scene id to jump to */
-  next: string;
-  variant?: "primary" | "danger" | "ghost" | "composer";
-};
-
-export type Scene = {
-  id: string;
-  step: number;
-  totalSteps: number;
-  device: Device;
-  app: AppSkin;
-  title: string;
-  /** Hint under the phone */
-  hint: string;
-  /** Advance on empty tap if no choices / single primary */
-  next?: string;
-  choices?: Choice[];
-  payload: Record<string, unknown>;
-};
+import type { Scene } from "@demo/runtime";
 
 export const TOTAL_STEPS = 8;
 
@@ -115,6 +89,8 @@ export const scenes: Scene[] = [
       mode: "actions",
       channel: "#legal-intake",
       bot: "Legal 360",
+      threadLabel: "Helios MSA",
+      intro: "Helios MSA — client redline vs playbook",
       docLink: "docs.google.com/…/Helios_MSA",
       flags: [
         {
@@ -161,6 +137,7 @@ export const scenes: Scene[] = [
       mode: "rejected",
       channel: "#legal-intake",
       bot: "Legal 360",
+      threadLabel: "Helios MSA",
       text: "Marked rejected. Thread stays open — no auto-email to client.",
     },
   },
@@ -176,6 +153,8 @@ export const scenes: Scene[] = [
       mode: "thread-reply",
       channel: "#legal-intake",
       bot: "Legal 360",
+      threadLabel: "Helios MSA",
+      threadOpenBody: "Thread open on Helios MSA liability + governing law.",
       phases: [
         {
           id: "compose",
@@ -282,10 +261,3 @@ export const scenes: Scene[] = [
     },
   },
 ];
-
-export const sceneById = Object.fromEntries(scenes.map((s) => [s.id, s])) as Record<
-  string,
-  Scene
->;
-
-export const FIRST_SCENE_ID = scenes[0].id;

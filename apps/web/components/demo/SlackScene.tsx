@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { Choice } from "@/content/demo-script";
+import type { Choice } from "@demo/runtime";
 
 type Flag = {
   id: string;
@@ -17,6 +17,9 @@ type SlackPayload = {
   bot: string;
   text?: string;
   docLink?: string;
+  threadLabel?: string;
+  intro?: string;
+  threadOpenBody?: string;
   flags?: Flag[];
   phases?: { id: string; you?: string; botReply?: string; cta: string }[];
 };
@@ -65,7 +68,7 @@ export function SlackScene({
         onClick={onAdvance}
         className="flex h-full w-full flex-col bg-[#1a1d21] px-3 pt-2 text-left text-white"
       >
-        <ChannelHeader channel={payload.channel} />
+        <ChannelHeader channel={payload.channel} threadLabel={payload.threadLabel} />
         <div className="mt-3 rounded-lg bg-[#2b1d1d] p-3 ring-1 ring-[#ef4444]/30">
           <div className="text-xs font-semibold text-[#f87171]">{payload.bot}</div>
           <p className="mt-1 text-[13px] text-[#f5f5f5]">{payload.text}</p>
@@ -82,13 +85,12 @@ export function SlackScene({
     return (
       <div className="flex h-full flex-col bg-[#1a1d21] text-white">
         <div className="px-3 pt-2">
-          <ChannelHeader channel={payload.channel} />
+          <ChannelHeader channel={payload.channel} threadLabel={payload.threadLabel} />
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-          <BotCard
-            bot={payload.bot}
-            body="Thread open on Helios MSA liability + governing law."
-          />
+          {payload.threadOpenBody ? (
+            <BotCard bot={payload.bot} body={payload.threadOpenBody} />
+          ) : null}
           {(sent || phaseIdx >= 0) && phase.you ? (
             <div className="ml-6 rounded-lg bg-[#2a2d31] px-3 py-2 text-[13px] leading-snug text-[#e8e8e8]">
               <div className="text-[10px] font-semibold text-[#9a9b9e]">You</div>
@@ -130,17 +132,13 @@ export function SlackScene({
     );
   }
 
-  // actions
   return (
     <div className="flex h-full flex-col bg-[#1a1d21] text-white">
       <div className="px-3 pt-2">
-        <ChannelHeader channel={payload.channel} />
+        <ChannelHeader channel={payload.channel} threadLabel={payload.threadLabel} />
       </div>
       <div className="flex-1 space-y-3 overflow-y-auto px-3 py-3">
-        <BotCard
-          bot={payload.bot}
-          body="Helios MSA — client redline vs playbook"
-        />
+        {payload.intro ? <BotCard bot={payload.bot} body={payload.intro} /> : null}
         {payload.docLink ? (
           <div className="text-[11px] text-[#5b9bd6]">📄 {payload.docLink}</div>
         ) : null}
@@ -198,11 +196,19 @@ export function SlackScene({
   );
 }
 
-function ChannelHeader({ channel }: { channel: string }) {
+function ChannelHeader({
+  channel,
+  threadLabel,
+}: {
+  channel: string;
+  threadLabel?: string;
+}) {
   return (
     <div>
       <div className="text-sm font-semibold text-[#d1d2d3]">{channel}</div>
-      <div className="text-[10px] text-[#9a9b9e]">thread · Helios MSA</div>
+      {threadLabel ? (
+        <div className="text-[10px] text-[#9a9b9e]">thread · {threadLabel}</div>
+      ) : null}
     </div>
   );
 }

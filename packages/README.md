@@ -1,3 +1,7 @@
 # packages
 
-Shared types / playbook schema / client SDK between web and api.
+| Package | Role |
+|---|---|
+| `@demo/runtime` | Scene / Choice / CaseMeta types + `buildCase` |
+
+Shared OpenAPI clients later.

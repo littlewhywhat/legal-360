@@ -1,10 +1,15 @@
-# legal-360
+# Demo cases
 
-client redline triage
+Shared story / flow engine. Each product demo is a case under `cases/`.
 
-[https://legal-360.vercel.app/](https://legal-360.vercel.app/)
+Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360)
 
-## Flows
+## Cases
 
-1. [As-is (no system)](./docs/flows/client-redline-as-is.md)
-2. [Auto — Docs + Slack](./docs/flows/client-redline-auto-slack.md)
+| Case | Path | Flows |
+|---|---|---|
+| Legal 360 | `/legal-360` | [as-is](./cases/legal-360/docs/flows/client-redline-as-is.md), [auto Slack](./cases/legal-360/docs/flows/client-redline-auto-slack.md) |
+
+## Add a case
+
+See [docs/add-case.md](./docs/add-case.md).

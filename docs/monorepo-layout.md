@@ -1,32 +1,31 @@
 # Monorepo layout
 
-Polyglot setup: JS and Python side by side, not one package manager for both.
+Polyglot setup: JS and Python side by side. Demo cases share one Next shell + `@demo/runtime`.
 
 ## Tree
 
 ```
-apps/web/     Next.js UI (pnpm)
-apps/api/     Python API — FastAPI + uv (LLM judge, ingest, Docs adapter)
-packages/     shared TS types / OpenAPI-generated clients (later)
-docs/flows/   product flows
+apps/web/              Next.js shell — catalog + /[case] player (pnpm)
+apps/api/              Python API — FastAPI + uv (later)
+packages/demo-runtime/ Scene / Choice / buildCase types
+cases/<id>/            Case meta + demo-script + docs/flows
+docs/                  How to add a case; monorepo notes
 ```
 
 ## Ownership
 
 | Path | Tooling |
 |---|---|
-| `apps/web`, `packages/*` | pnpm (`pnpm-workspace.yaml`) |
+| `apps/web`, `packages/*`, `cases/*` | pnpm (`pnpm-workspace.yaml`) |
 | `apps/api` | uv + `pyproject.toml` (sibling, not installed by pnpm) |
 
 ## Script orchestrator: `just`
 
-Not Turborepo (JS-centric) and not Makefile. Root [`justfile`](../justfile) is the thin entrypoint:
+Root [`justfile`](../justfile):
 
 ```bash
-just dev      # web + api
+just dev      # web
 just web      # Next only
 just api      # FastAPI only
 just test
 ```
-
-[`just`](https://github.com/casey/just) = command runner. Each recipe shells into `pnpm` or `uv`.

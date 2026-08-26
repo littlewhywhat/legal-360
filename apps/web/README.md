@@ -1,6 +1,6 @@
 # apps/web
 
-Next.js App Router — clickable phone storyboard demo of the preferred auto flow.
+Next.js shell: demo catalog + `/[case]` story player (`@demo/runtime` + `cases/*`).
 
 ```bash
 # from repo root
@@ -9,4 +9,4 @@ pnpm --filter web dev
 # or: just web
 ```
 
-Script: `content/demo-script.ts`. Deploy: Vercel, Root Directory `apps/web`, include files outside root.
+Register cases in `lib/cases.ts`. Deploy: Vercel, Root Directory `apps/web`, include files outside root.

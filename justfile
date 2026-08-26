@@ -1,4 +1,4 @@
-# Legal 360 — root command runner (install: https://github.com/casey/just)
+# Legal 360 / demo cases — root command runner (install: https://github.com/casey/just)
 
 dev:
     pnpm --filter web dev

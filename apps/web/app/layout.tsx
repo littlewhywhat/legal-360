@@ -18,9 +18,8 @@ const sourceSerif = Source_Serif_4({
 });
 
 export const metadata: Metadata = {
-  title: "Legal 360 — demo",
-  description:
-    "Tap-through phone storyboard: client redline → Slack decide → Docs → DocuSign",
+  title: "Demo cases",
+  description: "Tap-through phone storyboards powered by a shared demo engine",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
