@@ -10,6 +10,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@cases/investing':
+        specifier: workspace:*
+        version: link:../../cases/investing
       '@cases/legal-360':
         specifier: workspace:*
         version: link:../../cases/legal-360
@@ -50,6 +53,12 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
+
+  cases/investing:
+    dependencies:
+      '@demo/runtime':
+        specifier: workspace:*
+        version: link:../../packages/demo-runtime
 
   cases/legal-360:
     dependencies:

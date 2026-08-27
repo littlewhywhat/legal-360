@@ -9,6 +9,8 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { TelegramScene } from "./TelegramScene";
+import { AppScene } from "./AppScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -109,6 +111,21 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             payload={scene.payload as never}
             primaryLabel={primaryChoice?.label}
             onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
+            onAdvance={scene.next ? advance : undefined}
+          />
+        ) : null}
+        {scene.app === "telegram" ? (
+          <TelegramScene
+            payload={scene.payload as never}
+            onAdvance={scene.next ? advance : undefined}
+          />
+        ) : null}
+        {scene.app === "app" ? (
+          <AppScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
             onAdvance={scene.next ? advance : undefined}
           />
         ) : null}
