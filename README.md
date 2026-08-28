@@ -2,7 +2,7 @@
 
 Shared story / flow engine. Each product demo is a case under `cases/`.
 
-Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360)
+Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360) · Investing: [/investing](https://legal-360.vercel.app/investing)
 
 ## Cases
 

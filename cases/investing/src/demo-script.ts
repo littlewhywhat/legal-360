@@ -1,6 +1,46 @@
 import type { Scene } from "@demo/runtime";
 
-export const TOTAL_STEPS = 4;
+export const TOTAL_STEPS = 5;
+
+const TABS = {
+  home: "s4-home",
+  hot: "s2-hot",
+  goals: "s5-goals",
+} as const;
+
+const holdings = [
+  { ticker: "ADBE", name: "Adobe", value: "$4,200", change: "+2.1%", then: "$6,100" },
+  { ticker: "BTC", name: "Bitcoin", value: "$8,400", change: "−1.4%", then: "$12,000" },
+  { ticker: "SPY", name: "S&P 500", value: "$3,400", change: "+0.6%", then: "$4,800" },
+];
+
+const candidate = {
+  ticker: "BYRN",
+  name: "Byrna Technologies",
+  value: "$1,200",
+  change: "+4.0%",
+  then: "$2,400",
+};
+
+const signals = [
+  {
+    ticker: "BYRN",
+    name: "Byrna Technologies",
+    blurb: "Insider bought yesterday",
+    ping: true,
+  },
+  {
+    ticker: "DE",
+    name: "Deere",
+    blurb: "Insider bought this week",
+    ping: false,
+  },
+];
+
+const status = {
+  pnl: "+$1,000",
+  equity: "$16,000",
+};
 
 export const scenes: Scene[] = [
   {
@@ -10,49 +50,32 @@ export const scenes: Scene[] = [
     device: "client",
     app: "telegram",
     title: "Opportunity ping",
-    hint: "Tap the DM to open the app",
-    next: "s2-home",
+    hint: "Tap the DM — opens Hot, not the portfolio",
+    next: "s2-hot",
     payload: {
       mode: "notification",
       bot: "Investing OS",
       time: "7:14 AM",
-      text: "Insider P on BYRN (risk sleeve) — cheap vs own 5y. Open dossier.",
+      text: "Insider bought BYRN — cheap vs own 5y.",
     },
   },
   {
-    id: "s2-home",
+    id: "s2-hot",
     step: 2,
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "app",
-    title: "Home",
-    hint: "Status and goal are here — tap BYRN to research",
-    next: "s3-dossier",
+    title: "Hot",
+    hint: "Same research as the ping — tap BYRN for the dossier",
     payload: {
-      mode: "home",
-      status: {
-        equity: "$16,000",
-        deposits: "$20,000",
-        cashouts: "$5,000",
-        pnl: "+$1,000",
-        formula: "16 + 5 − 20",
-      },
-      goal: {
-        coverage: "67%",
-        coveragePct: 67,
-        hitDate: "Mar 2028",
-        label: "Expense coverage",
-      },
-      opportunity: {
-        ticker: "BYRN",
-        sleeve: "Risk",
-        headline: "Open-market P · cheap vs 5y",
-        sub: "Form 4 this morning",
-      },
-      defense: {
-        ticker: "ADBE",
-        text: "Holding · no new negative tape",
-      },
+      mode: "hot",
+      tabs: TABS,
+      activeTab: "hot",
+      dossierScene: "s3-dossier",
+      signals,
+      status,
+      holdings,
+      candidate,
     },
   },
   {
@@ -62,55 +85,77 @@ export const scenes: Scene[] = [
     device: "client",
     app: "app",
     title: "Dossier",
-    hint: "Scroll the one-run research, then continue",
-    next: "s4-verdict",
+    hint: "Cards, not a quiz — Add puts BYRN on Home",
     payload: {
       mode: "dossier",
+      tabs: TABS,
+      activeTab: "hot",
       ticker: "BYRN",
       name: "Byrna Technologies",
-      sleeve: "Risk sleeve · vs ADBE core",
       print: {
         who: "CEO, direct",
         code: "P",
-        size: "$210k open-market",
+        size: "$210k",
         when: "yesterday",
       },
       memo: [
         "Cash from ops still thin; inventory up with sell-in.",
-        "No leverage spike. Not a quality compounder — option on execution.",
+        "No leverage spike. Option on execution, not a compounder.",
       ],
       buyers: [
         { label: "Other insiders", detail: "CFO small P same week" },
         { label: "eToro", detail: "2 copy traders opened this week" },
-        { label: "13F", detail: "No Buffett / Burry print last quarter" },
+        { label: "13F", detail: "No Buffett / Burry last quarter" },
       ],
+      ceo: {
+        name: "Bryan Ganz",
+        blurb: "Less-lethal defense for civilians and agencies.",
+      },
+      signals,
+      status,
+      holdings,
+      candidate,
     },
   },
   {
-    id: "s4-verdict",
+    id: "s4-home",
     step: 4,
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "app",
-    title: "Verdict",
-    hint: "Like / Skip is yours — hypothesis is a card, not an order",
-    choices: [
-      { id: "like", label: "Like", next: "s1-tg-ping", variant: "primary" },
-      { id: "skip", label: "Skip", next: "s1-tg-ping", variant: "ghost" },
-    ],
+    title: "Home",
+    hint: "Portfolio — BYRN appears after Add. Tab to Goals",
     payload: {
-      mode: "verdict",
-      ticker: "BYRN",
-      ceo: "Bryan Ganz",
-      mission: "Less-lethal defense for civilians and agencies. Do you like the people and the mission?",
-      hypothesis: {
-        r: "6.9%",
-        g: "12%",
-        spread: "+5.1 pp",
-        months: "~18 mo to repay at g",
-        leftover: "Ahead vs paying cash — if g holds",
-        caveat: "If g ≤ r or the name drops, the loan still exists.",
-      },
+      mode: "home",
+      tabs: TABS,
+      activeTab: "home",
+      dossierScene: "s3-dossier",
+      status,
+      holdings,
+      candidate,
+      signals,
+    },
+  },
+  {
+    id: "s5-goals",
+    step: 5,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "app",
+    title: "Goals",
+    hint: "2030 book at assumed prices — BYRN only if you added it",
+    payload: {
+      mode: "goals",
+      tabs: TABS,
+      activeTab: "goals",
+      horizon: "2030",
+      totalNow: "$16,000",
+      totalThen: "$22,900",
+      totalThenWithCandidate: "$25,300",
+      status,
+      holdings,
+      candidate,
+      signals,
     },
   },
 ];

@@ -121,13 +121,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
           />
         ) : null}
         {scene.app === "app" ? (
-          <AppScene
-            key={scene.id}
-            payload={scene.payload as never}
-            choices={scene.choices}
-            onChoice={onChoice}
-            onAdvance={scene.next ? advance : undefined}
-          />
+          <AppScene payload={scene.payload as never} onGo={go} />
         ) : null}
       </PhoneFrame>
 
