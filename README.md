@@ -2,13 +2,14 @@
 
 Shared story / flow engine. Each product demo is a case under `cases/`.
 
-Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360)
+Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360) · Investing: [/investing](https://legal-360.vercel.app/investing)
 
 ## Cases
 
 | Case | Path | Flows |
 |---|---|---|
 | Legal 360 | `/legal-360` | [as-is](./cases/legal-360/docs/flows/client-redline-as-is.md), [auto Slack](./cases/legal-360/docs/flows/client-redline-auto-slack.md) |
+| Investing OS | `/investing` | [research loop](./cases/investing/docs/flows/research-loop.md) |
 
 ## Add a case
 

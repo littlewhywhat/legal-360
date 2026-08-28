@@ -9,6 +9,8 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { TelegramScene } from "./TelegramScene";
+import { AppScene } from "./AppScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -80,7 +82,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   );
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 py-6">
+    <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
       <PhoneFrame deviceLabel={deviceLabel(scene)}>
@@ -111,6 +113,15 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
             onAdvance={scene.next ? advance : undefined}
           />
+        ) : null}
+        {scene.app === "telegram" ? (
+          <TelegramScene
+            payload={scene.payload as never}
+            onAdvance={scene.next ? advance : undefined}
+          />
+        ) : null}
+        {scene.app === "app" ? (
+          <AppScene payload={scene.payload as never} onGo={go} />
         ) : null}
       </PhoneFrame>
 

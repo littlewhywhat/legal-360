@@ -1,5 +1,5 @@
 export type Device = "client" | "supervisor" | "system";
-export type AppSkin = "email" | "slack" | "docs" | "system";
+export type AppSkin = "email" | "slack" | "docs" | "system" | "telegram" | "app";
 
 export type Choice = {
   id: string;

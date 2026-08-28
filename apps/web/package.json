@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@cases/investing": "workspace:*",
     "@cases/legal-360": "workspace:*",
     "@demo/runtime": "workspace:*",
     "next": "16.3.0",
