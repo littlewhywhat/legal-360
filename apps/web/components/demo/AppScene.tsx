@@ -142,7 +142,7 @@ function Shell({
   back?: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col bg-[#0c1210] text-[#e7f0ea]">
+    <div className="flex h-full w-full min-w-0 flex-col bg-[#0c1210] text-[#e7f0ea]">
       <header className="flex shrink-0 items-center gap-2 border-b border-white/8 px-3 pb-2 pt-1">
         {back ? (
           <button

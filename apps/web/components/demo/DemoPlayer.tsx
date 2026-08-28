@@ -82,7 +82,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   );
 
   return (
-    <div className="flex flex-1 flex-col items-center gap-6 py-6">
+    <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
       <PhoneFrame deviceLabel={deviceLabel(scene)}>
