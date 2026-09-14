@@ -3,15 +3,15 @@ import type { Scene } from "@demo/runtime";
 export const TOTAL_STEPS = 6;
 
 const goalsBefore = [
-  { id: "launch", name: "Launch my side project", done: 8, total: 16, tone: "teal" },
-  { id: "spanish", name: "Learn Spanish", done: 6, total: 12, tone: "violet" },
-  { id: "fit", name: "Get fit", done: 8, total: 10, tone: "amber" },
+  { id: "launch", name: "Launch my side project", done: 11, total: 24, tone: "teal" },
+  { id: "spanish", name: "Learn Spanish", done: 6, total: 8, tone: "violet" },
+  { id: "fit", name: "Get fit", done: 5, total: 8, tone: "amber" },
 ];
 
 const goalsAfter = [
-  { id: "launch", name: "Launch my side project", done: 12, total: 16, tone: "teal" },
-  { id: "spanish", name: "Learn Spanish", done: 6, total: 12, tone: "violet" },
-  { id: "fit", name: "Get fit", done: 8, total: 10, tone: "amber" },
+  { id: "launch", name: "Launch my side project", done: 15, total: 24, tone: "teal" },
+  { id: "spanish", name: "Learn Spanish", done: 6, total: 8, tone: "violet" },
+  { id: "fit", name: "Get fit", done: 5, total: 8, tone: "amber" },
 ];
 
 const landingSteps = [
@@ -133,7 +133,7 @@ export const scenes: Scene[] = [
       mode: "quiz-goal",
       question: "What do you want to move forward right now?",
       options: [
-        { id: "launch", label: "Launch my side project", detail: "8 / 16 squares" },
+        { id: "launch", label: "Launch my side project", detail: "11 / 24 squares" },
         { id: "spanish", label: "Learn Spanish", detail: "Later" },
         { id: "fit", label: "Get fit", detail: "Later" },
       ],
@@ -211,8 +211,8 @@ export const scenes: Scene[] = [
       mode: "summary",
       added: 4,
       duration: "20 min",
-      progressBefore: "50%",
-      progressAfter: "75%",
+      progressBefore: "46%",
+      progressAfter: "62%",
       goalName: "Launch my side project",
       completed: [
         "Write hero copy",

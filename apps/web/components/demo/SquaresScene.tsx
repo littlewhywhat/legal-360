@@ -92,24 +92,37 @@ function SquareGrid({
   total,
   tone,
   size = "sm",
+  cols,
 }: {
   done: number;
   total: number;
   tone: Tone;
   size?: "sm" | "md";
+  cols?: number;
 }) {
   const dim = size === "md" ? "h-4 w-4" : "h-2.5 w-2.5";
-  return (
-    <div className="flex flex-wrap gap-0.5">
-      {Array.from({ length: total }, (_, i) => (
-        <span
-          key={i}
-          className={`${dim} rounded-[2px] transition-colors duration-300`}
-          style={{ background: i < done ? TONE[tone] : "#2a2a32" }}
-        />
-      ))}
-    </div>
-  );
+  const cells = Array.from({ length: total }, (_, i) => (
+    <span
+      key={i}
+      className={
+        cols
+          ? "aspect-square w-full rounded-[2px] transition-colors duration-300"
+          : `${dim} rounded-[2px] transition-colors duration-300`
+      }
+      style={{ background: i < done ? TONE[tone] : "#2a2a32" }}
+    />
+  ));
+  if (cols) {
+    return (
+      <div
+        className="grid w-full gap-0.5"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
+        {cells}
+      </div>
+    );
+  }
+  return <div className="flex flex-wrap gap-0.5">{cells}</div>;
 }
 
 function TabBar({
@@ -217,7 +230,7 @@ export function SquaresScene({
                 </p>
               </div>
               <div className="mt-2">
-                <SquareGrid done={g.done} total={g.total} tone={g.tone} />
+                <SquareGrid done={g.done} total={g.total} tone={g.tone} cols={8} />
               </div>
             </div>
           ))}
