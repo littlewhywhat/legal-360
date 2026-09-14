@@ -17,21 +17,88 @@ const goalsAfter = [
 const landingSteps = [
   { id: "hero", label: "Write hero copy" },
   { id: "cta", label: "Add CTA" },
-  { id: "mobile", label: "Fix mobile layout" },
-  { id: "analytics", label: "Add analytics" },
+  {
+    id: "mobile",
+    label: "Fix mobile layout",
+    tooBig: true,
+    splitInto: [
+      { id: "breakpoints", label: "Check breakpoints" },
+      { id: "nav", label: "Fix nav wrap" },
+    ],
+  },
 ];
 
-const heatmap = [
-  [0, 0, 1, 1, 0, 2, 0],
-  [0, 1, 1, 1, 3, 2, 0],
-  [0, 1, 1, 2, 3, 1, 0],
-  [0, 0, 1, 1, 1, 2, 1],
-  [0, 2, 1, 1, 3, 1, 0],
-  [0, 1, 3, 1, 1, 0, 0],
-  [0, 0, 1, 2, 1, 1, 0],
-  [0, 1, 1, 1, 2, 3, 0],
-  [0, 0, 2, 1, 1, 1, 0],
-  [0, 0, 1, 1, 0, 0, 0],
+const weekDays = [
+  { id: "sun", label: "S", name: "Sunday", squares: [] },
+  {
+    id: "mon",
+    label: "M",
+    name: "Monday",
+    squares: [{ tone: "teal" }, { tone: "teal" }, { tone: "violet" }],
+  },
+  {
+    id: "tue",
+    label: "T",
+    name: "Tuesday",
+    squares: [{ tone: "teal" }, { tone: "amber" }, { tone: "teal" }, { tone: "violet" }],
+  },
+  {
+    id: "wed",
+    label: "W",
+    name: "Wednesday",
+    highlight: true,
+    squares: [
+      { tone: "teal" },
+      { tone: "teal" },
+      { tone: "teal" },
+      { tone: "teal" },
+      { tone: "violet" },
+      { tone: "violet" },
+      { tone: "amber" },
+    ],
+    detail: {
+      title: "Wednesday",
+      count: 7,
+      groups: [
+        {
+          goal: "Launch my side project",
+          task: "Build landing page",
+          tone: "teal",
+          items: [
+            "Write hero copy",
+            "Add CTA",
+            "Check breakpoints",
+            "Fix nav wrap",
+          ],
+        },
+        {
+          goal: "Learn Spanish",
+          task: "Vocab",
+          tone: "violet",
+          items: ["Review 5 cards", "Say 3 sentences out loud"],
+        },
+        {
+          goal: "Get fit",
+          task: "Walk",
+          tone: "amber",
+          items: ["10-minute walk"],
+        },
+      ],
+    },
+  },
+  {
+    id: "thu",
+    label: "T",
+    name: "Thursday",
+    squares: [{ tone: "teal" }, { tone: "teal" }],
+  },
+  {
+    id: "fri",
+    label: "F",
+    name: "Friday",
+    squares: [{ tone: "violet" }, { tone: "teal" }, { tone: "amber" }],
+  },
+  { id: "sat", label: "S", name: "Saturday", squares: [] },
 ];
 
 export const scenes: Scene[] = [
@@ -88,7 +155,7 @@ export const scenes: Scene[] = [
       question: "Which task?",
       goalName: "Launch my side project",
       options: [
-        { id: "landing", label: "Build landing page", detail: "4 next squares" },
+        { id: "landing", label: "Build landing page", detail: "Next squares" },
         { id: "backend", label: "Backend API", detail: "Later" },
       ],
     },
@@ -100,7 +167,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Pick steps",
-    hint: "Timer is a container. Squares are the progress.",
+    hint: "These are the session squares. Too big? Split in Focus.",
     choices: [
       { id: "start", label: "Start 20 min", next: "s5-focus", variant: "primary" },
     ],
@@ -119,7 +186,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Focus",
-    hint: "Tap each square as you finish it, then end the session",
+    hint: "Split the oversized step. Fill any remaining square — any order.",
     payload: {
       mode: "focus",
       timer: "20:00",
@@ -136,7 +203,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "You moved forward",
-    hint: "No streak. Just four squares that happened.",
+    hint: "Split turned one square into two. No streak.",
     choices: [
       { id: "done", label: "Finish for now", next: "s7-home-after", variant: "primary" },
     ],
@@ -150,8 +217,8 @@ export const scenes: Scene[] = [
       completed: [
         "Write hero copy",
         "Add CTA",
-        "Fix mobile layout",
-        "Add analytics",
+        "Check breakpoints",
+        "Fix nav wrap",
       ],
     },
   },
@@ -162,7 +229,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goals",
-    hint: "Same goal — four more squares filled. Open History.",
+    hint: "Same goal — more squares filled. Open History.",
     next: "s8-history",
     payload: {
       mode: "home",
@@ -179,7 +246,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "History",
-    hint: "15-min squares over the week — tap Insights",
+    hint: "Each day is many squares. Tap Wednesday, then Insights.",
     next: "s9-insights",
     payload: {
       mode: "history",
@@ -190,15 +257,7 @@ export const scenes: Scene[] = [
         { id: "w36", label: "W36" },
         { id: "w37", label: "W37", active: true },
       ],
-      days: ["S", "M", "T", "W", "T", "F", "S"],
-      heatmap,
-      peek: {
-        action: "Write hero copy",
-        goal: "Launch my side project",
-        task: "Build landing page",
-        when: "Today, 10:42",
-        session: "Focus #32 — 20 min",
-      },
+      weekDays,
     },
   },
   {
@@ -215,8 +274,8 @@ export const scenes: Scene[] = [
       homeScene: "s7-home-after",
       lines: [
         "You completed 43 squares this week.",
+        "Wednesday was the busiest day — 7 squares.",
         "Writing is your most frequent action.",
-        "Morning sessions fill more squares than evenings.",
       ],
     },
   },

@@ -7,11 +7,11 @@ Notion is import-only (out of this prototype). No guilt streaks. Copy: “You mo
 ## Happy path
 
 1. Home — goals as square grids, Start Focus.
-2. Quiz — Goal → Task → steps to work on.
-3. Focus Mode — 20 min timer; tap squares to fill (0–n per session).
+2. Quiz — Goal → Task → session squares (mark too-big ones).
+3. Focus Mode — list of chosen squares, any order; Split if a step is too big.
 4. Summary — +squares, progress before → after.
 5. Home — same goal, more squares filled.
-6. History — week chips + 15-min heatmap; Insights from squares.
+6. History — week heatmap (many squares per day) → tap a day for counts → Insights.
 
 ```mermaid
 sequenceDiagram
@@ -25,8 +25,10 @@ sequenceDiagram
   You->>Home: Start Focus
   Home->>Quiz: Goal / task / steps
   Quiz->>Focus: 20 min
-  You->>Focus: Fill squares
+  You->>Focus: Split oversized step
+  You->>Focus: Fill squares in any order
   Focus->>Summary: You moved forward
   Summary->>Home: Goal grid updated
-  Home->>History: Week heatmap
+  Home->>History: Day heatmap
+  You->>History: Open a day
 ```
