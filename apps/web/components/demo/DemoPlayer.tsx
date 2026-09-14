@@ -9,8 +9,10 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { SquaresScene } from "./SquaresScene";
 
 function deviceLabel(scene: Scene): string {
+  if (scene.app === "squares") return "Your phone";
   switch (scene.device) {
     case "client":
       return "Client phone";
@@ -83,7 +85,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
-      <PhoneFrame deviceLabel={deviceLabel(scene)}>
+      <PhoneFrame
+        deviceLabel={deviceLabel(scene)}
+        screenClassName={
+          scene.app === "squares" ? "bg-[#111113] text-[#ececec]" : undefined
+        }
+      >
         {scene.app === "email" ? (
           <EmailScene
             payload={scene.payload as never}
@@ -110,6 +117,16 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             primaryLabel={primaryChoice?.label}
             onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
             onAdvance={scene.next ? advance : undefined}
+          />
+        ) : null}
+        {scene.app === "squares" ? (
+          <SquaresScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
           />
         ) : null}
       </PhoneFrame>
