@@ -109,7 +109,9 @@ function SquareGrid({
           ? "aspect-square w-full rounded-[2px] transition-colors duration-300"
           : `${dim} rounded-[2px] transition-colors duration-300`
       }
-      style={{ background: i < done ? TONE[tone] : "#2a2a32" }}
+      style={{
+        background: i < done ? TONE[tone] : cols ? "#3a3a44" : "#2a2a32",
+      }}
     />
   ));
   if (cols) {
