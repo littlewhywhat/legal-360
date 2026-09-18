@@ -8,9 +8,11 @@ type Tone = "teal" | "violet" | "amber";
 type GoalCard = {
   id: string;
   name: string;
+  task?: string;
   done: number;
   total: number;
   tone: Tone;
+  nextScene?: string;
 };
 
 type StepItem = {
@@ -49,9 +51,8 @@ type CalendarWeek = {
 type SquaresPayload = {
   mode:
     | "home"
-    | "quiz-goal"
-    | "quiz-task"
-    | "quiz-steps"
+    | "pick-steps"
+    | "ready"
     | "focus"
     | "summary"
     | "history"
@@ -60,9 +61,6 @@ type SquaresPayload = {
   goals?: GoalCard[];
   last7?: CalendarDay[];
   historyScene?: string;
-  startEnabled?: boolean;
-  question?: string;
-  options?: { id: string; label: string; detail?: string }[];
   goalName?: string;
   taskName?: string;
   steps?: StepItem[];
@@ -284,114 +282,65 @@ export function SquaresScene({
           <WeekStrip days={payload.last7} onOpen={goHistory} />
         ) : null}
         <div className="mt-3 space-y-2">
-          {payload.goals?.map((g) => (
-            <div
-              key={g.id}
-              className="rounded-2xl bg-[#1c1c21] px-3 py-2.5 ring-1 ring-white/5"
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <p className="text-[13px] font-medium leading-snug">{g.name}</p>
-                <p className="shrink-0 text-[10px] tabular-nums text-[#9aa0a6]">
-                  {g.done}/{g.total}
-                </p>
+          {payload.goals?.map((g) => {
+            const open = g.nextScene ? () => onGo(g.nextScene!) : undefined;
+            const body = (
+              <>
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-[13px] font-medium leading-snug">
+                    {g.task ?? g.name}
+                  </p>
+                  <p className="shrink-0 text-[10px] tabular-nums text-[#9aa0a6]">
+                    {g.done}/{g.total}
+                  </p>
+                </div>
+                {g.task ? (
+                  <p className="mt-0.5 text-[11px] text-[#9aa0a6]">{g.name}</p>
+                ) : null}
+                <div className="mt-2">
+                  <SquareGrid
+                    done={g.done}
+                    total={g.total}
+                    tone={g.tone}
+                    cols={8}
+                  />
+                </div>
+              </>
+            );
+            const cls =
+              "w-full rounded-2xl bg-[#1c1c21] px-3 py-2.5 text-left ring-1 ring-white/5";
+            if (open) {
+              return (
+                <button
+                  key={g.id}
+                  type="button"
+                  onClick={open}
+                  className={`${cls} active:scale-[0.99]`}
+                >
+                  {body}
+                </button>
+              );
+            }
+            return (
+              <div key={g.id} className={cls}>
+                {body}
               </div>
-              <div className="mt-2">
-                <SquareGrid done={g.done} total={g.total} tone={g.tone} cols={8} />
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
-        {payload.startEnabled === false ? null : (
-          <button
-            type="button"
-            onClick={onAdvance}
-            className="mt-3 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
-          >
-            Start Focus
-          </button>
-        )}
       </Shell>
     );
   }
 
-  if (
-    payload.mode === "quiz-goal" ||
-    payload.mode === "quiz-task" ||
-    payload.mode === "quiz-steps"
-  ) {
+  if (payload.mode === "pick-steps") {
     return (
-      <Shell>
-        <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
-          Focus
-        </p>
-        <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
-          {payload.question}
-        </p>
-        {payload.goalName ? (
-          <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
-        ) : null}
-        {payload.taskName ? (
-          <p className="text-[11px] text-[#9aa0a6]">{payload.taskName}</p>
-        ) : null}
-        <div className="mt-4 space-y-2">
-          {payload.options?.map((opt) => {
-            const choice = choices?.find((c) => c.id === opt.id);
-            return (
-              <button
-                key={opt.id}
-                type="button"
-                disabled={!choice}
-                onClick={() => choice && onChoice(choice)}
-                className={[
-                  "w-full rounded-2xl px-3 py-3 text-left ring-1",
-                  choice
-                    ? "bg-[#1c1c21] ring-[#5eead4]/40"
-                    : "bg-[#16161a] ring-white/5 opacity-50",
-                ].join(" ")}
-              >
-                <p className="text-[13px] font-medium">{opt.label}</p>
-                {opt.detail ? (
-                  <p className="mt-0.5 text-[11px] text-[#9aa0a6]">{opt.detail}</p>
-                ) : null}
-              </button>
-            );
-          })}
-          {payload.steps ? (
-            <div className="rounded-2xl bg-[#1c1c21] px-3 py-3 ring-1 ring-white/5">
-              <div className="mb-3">
-                <SquareGrid
-                  done={0}
-                  total={payload.steps.length}
-                  tone="teal"
-                  size="md"
-                />
-              </div>
-              <ul className="space-y-2">
-                {payload.steps.map((s) => (
-                  <li key={s.id} className="flex items-center gap-2 text-[13px]">
-                    <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-[3px] ring-1 ring-[#5eead4]/50" />
-                    <span className="min-w-0 flex-1 leading-snug">{s.label}</span>
-                    {s.tooBig ? (
-                      <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#fbbf24]">
-                        Too big
-                      </span>
-                    ) : null}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ) : null}
-        </div>
-        {payload.mode === "quiz-steps" && primary ? (
-          <button
-            type="button"
-            onClick={() => onChoice(primary)}
-            className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
-          >
-            {primary.label}
-          </button>
-        ) : null}
-      </Shell>
+      <PickSteps payload={payload} primary={primary} onChoice={onChoice} />
+    );
+  }
+
+  if (payload.mode === "ready") {
+    return (
+      <ReadyTimer payload={payload} primary={primary} onChoice={onChoice} />
     );
   }
 
@@ -499,6 +448,138 @@ export function SquaresScene({
   }
 
   return null;
+}
+
+function PickSteps({
+  payload,
+  primary,
+  onChoice,
+}: {
+  payload: SquaresPayload;
+  primary?: Choice;
+  onChoice: (choice: Choice) => void;
+}) {
+  const steps = payload.steps ?? [];
+  const [on, setOn] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(steps.map((s) => [s.id, true])),
+  );
+  const picked = steps.filter((s) => on[s.id]).length;
+
+  return (
+    <Shell>
+      <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
+        Focus
+      </p>
+      <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
+        Choose squares
+      </p>
+      <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.taskName}</p>
+      {payload.goalName ? (
+        <p className="text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
+      ) : null}
+      <ul className="mt-4 space-y-2">
+        {steps.map((s) => {
+          const checked = !!on[s.id];
+          return (
+            <li key={s.id}>
+              <button
+                type="button"
+                aria-pressed={checked}
+                onClick={() =>
+                  setOn((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                }
+                className="flex w-full items-center gap-2 rounded-2xl bg-[#1c1c21] px-3 py-3 text-left ring-1 ring-white/5"
+              >
+                <span
+                  className="inline-block h-4 w-4 shrink-0 rounded-[3px] ring-1"
+                  style={{
+                    background: checked ? TONE.teal : "transparent",
+                    boxShadow: `inset 0 0 0 1px ${checked ? TONE.teal : "#5eead4"}`,
+                  }}
+                />
+                <span className="min-w-0 flex-1 text-[13px] leading-snug">
+                  {s.label}
+                </span>
+                {s.tooBig ? (
+                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#fbbf24]">
+                    Too big
+                  </span>
+                ) : null}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-2 text-center text-[11px] tabular-nums text-[#9aa0a6]">
+        {picked}/{steps.length} this session
+      </p>
+      {primary ? (
+        <button
+          type="button"
+          disabled={picked === 0}
+          onClick={() => onChoice(primary)}
+          className={[
+            "mt-3 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
+            picked > 0
+              ? "bg-[#5eead4] text-[#042f2e]"
+              : "bg-[#1c1c21] text-[#6b7280]",
+          ].join(" ")}
+        >
+          {primary.label}
+        </button>
+      ) : null}
+    </Shell>
+  );
+}
+
+function ReadyTimer({
+  payload,
+  primary,
+  onChoice,
+}: {
+  payload: SquaresPayload;
+  primary?: Choice;
+  onChoice: (choice: Choice) => void;
+}) {
+  const steps = payload.steps ?? [];
+  return (
+    <Shell>
+      <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
+        Ready
+      </p>
+      <p className="mt-2 text-center text-[13px] font-medium">
+        {payload.taskName}
+      </p>
+      {payload.goalName ? (
+        <p className="text-center text-[11px] text-[#9aa0a6]">
+          {payload.goalName}
+        </p>
+      ) : null}
+      <p className="mt-8 text-center font-[family-name:var(--font-display)] text-[48px] leading-none tabular-nums tracking-tight">
+        {payload.timer}
+      </p>
+      <p className="mt-2 text-center text-[11px] text-[#9aa0a6]">
+        Pomodoro · timer ≠ a square
+      </p>
+      <ul className="mt-6 space-y-1.5">
+        {steps.map((s) => (
+          <li key={s.id} className="flex items-center gap-2 text-[13px]">
+            <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-[3px] ring-1 ring-[#5eead4]/50" />
+            <span className="min-w-0 flex-1 leading-snug">{s.label}</span>
+          </li>
+        ))}
+      </ul>
+      {primary ? (
+        <button
+          type="button"
+          onClick={() => onChoice(primary)}
+          className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
+        >
+          {primary.label}
+        </button>
+      ) : null}
+    </Shell>
+  );
 }
 
 function FocusMode({
