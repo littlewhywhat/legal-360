@@ -4,7 +4,7 @@ import "./globals.css";
 
 const manrope = Manrope({
   variable: "--font-sans-demo",
-  subsets: ["latin"],
+  subsets: ["latin", "cyrillic"],
 });
 
 const fraunces = Fraunces({
