@@ -6,8 +6,8 @@ Notion is import-only (out of this prototype). No guilt streaks. Copy: “You mo
 
 ## Happy path
 
-1. Home — last-7-days GitHub strip; goals as square grids. Tap a goal (no Start Focus).
-2. Choose squares — checkboxes / multiselect for this session.
+1. Home — last-7-days GitHub strip; `+` tile (name modal) then goals. Tap a goal.
+2. Goal — canned Keep-style list. Checkbox = done. Tap text = this session. Show/hide completed. Start.
 3. Ready — pomodoro timer set, not running. Start.
 4. Focus Mode — chosen squares, any order. End session when you want.
 5. Confirm — check what you finished (not every square). Confirm.
@@ -18,17 +18,17 @@ Notion is import-only (out of this prototype). No guilt streaks. Copy: “You mo
 sequenceDiagram
   actor You
   participant Home
-  participant Pick
+  participant Goal
   participant Ready
   participant Focus
   participant Confirm
   participant History
   participant Day
 
-  You->>Home: Tap a goal
-  Home->>Pick: Session squares
-  You->>Pick: Check squares
-  Pick->>Ready: 20 min set
+  You->>Home: Tap + or a goal
+  Home->>Goal: Keep list
+  You->>Goal: Select squares
+  Goal->>Ready: 20 min set
   You->>Ready: Start
   Ready->>Focus: Timer running
   You->>Focus: Fill squares in any order

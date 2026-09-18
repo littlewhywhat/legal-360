@@ -11,7 +11,15 @@ type GoalCard = {
   done: number;
   total: number;
   tone: Tone;
-  nextScene?: string;
+  items?: OutlineItem[];
+  startScene?: string;
+};
+
+type OutlineItem = {
+  id: string;
+  label: string;
+  depth: number;
+  done?: boolean;
 };
 
 type StepItem = {
@@ -49,7 +57,6 @@ type CalendarWeek = {
 type SquaresPayload = {
   mode:
     | "home"
-    | "pick-steps"
     | "ready"
     | "focus"
     | "summary"
@@ -229,7 +236,7 @@ function Shell({
   footer?: ReactNode;
 }) {
   return (
-    <div className="flex h-full w-full min-w-0 flex-col bg-[#111113] text-[#ececec]">
+    <div className="relative flex h-full w-full min-w-0 flex-col bg-[#111113] text-[#ececec]">
       <div className="min-h-0 flex-1 overflow-y-auto px-3.5 pt-1">{children}</div>
       {footer}
     </div>
@@ -255,75 +262,7 @@ export function SquaresScene({
   );
 
   if (payload.mode === "home") {
-    const goHistory = payload.historyScene
-      ? () => onGo(payload.historyScene!)
-      : undefined;
-    return (
-      <Shell
-        footer={<TabBar active="home" onHistory={goHistory} />}
-      >
-        <div className="flex items-baseline justify-between pt-1">
-          <p className="text-[15px] font-semibold tracking-tight">Squares</p>
-          <p className="text-[11px] text-[#9aa0a6]">
-            {payload.weekCount} this week
-          </p>
-        </div>
-        <p className="mt-1 text-[11px] text-[#9aa0a6]">
-          You moved forward. No streaks.
-        </p>
-        {payload.last7 ? (
-          <WeekStrip days={payload.last7} onOpen={goHistory} />
-        ) : null}
-        <div className="mt-3 space-y-2">
-          {payload.goals?.map((g) => {
-            const open = g.nextScene ? () => onGo(g.nextScene!) : undefined;
-            const body = (
-              <>
-                <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-[13px] font-medium leading-snug">{g.name}</p>
-                  <p className="shrink-0 text-[10px] tabular-nums text-[#9aa0a6]">
-                    {g.done}/{g.total}
-                  </p>
-                </div>
-                <div className="mt-2">
-                  <SquareGrid
-                    done={g.done}
-                    total={g.total}
-                    tone={g.tone}
-                    cols={8}
-                  />
-                </div>
-              </>
-            );
-            const cls =
-              "w-full rounded-2xl bg-[#1c1c21] px-3 py-2.5 text-left ring-1 ring-white/5";
-            if (open) {
-              return (
-                <button
-                  key={g.id}
-                  type="button"
-                  onClick={open}
-                  className={`${cls} active:scale-[0.99]`}
-                >
-                  {body}
-                </button>
-              );
-            }
-            return (
-              <div key={g.id} className={cls}>
-                {body}
-              </div>
-            );
-          })}
-        </div>
-      </Shell>
-    );
-  }
-
-  if (payload.mode === "pick-steps") {
-    return (
-      <PickSteps payload={payload} primary={primary} onChoice={onChoice} />
-    );
+    return <HomeView payload={payload} onGo={onGo} />;
   }
 
   if (payload.mode === "ready") {
@@ -399,76 +338,262 @@ export function SquaresScene({
   return null;
 }
 
-function PickSteps({
+function HomeView({
   payload,
-  primary,
-  onChoice,
+  onGo,
 }: {
   payload: SquaresPayload;
-  primary?: Choice;
-  onChoice: (choice: Choice) => void;
+  onGo: (id: string) => void;
 }) {
-  const steps = payload.steps ?? [];
-  const [on, setOn] = useState<Record<string, boolean>>(() =>
-    Object.fromEntries(steps.map((s) => [s.id, true])),
+  const [goals, setGoals] = useState<GoalCard[]>(() => payload.goals ?? []);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [modal, setModal] = useState(false);
+  const [name, setName] = useState("");
+  const goHistory = payload.historyScene
+    ? () => onGo(payload.historyScene!)
+    : undefined;
+  const open = goals.find((g) => g.id === openId);
+
+  if (open) {
+    return (
+      <GoalOutline
+        title={open.name}
+        items={open.items ?? []}
+        onBack={() => setOpenId(null)}
+        onStart={open.startScene ? () => onGo(open.startScene!) : undefined}
+        onItems={(items) =>
+          setGoals((prev) =>
+            prev.map((g) => (g.id === open.id ? { ...g, items } : g)),
+          )
+        }
+      />
+    );
+  }
+
+  function addGoal() {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const id = `g-${Date.now()}`;
+    const goal: GoalCard = {
+      id,
+      name: trimmed,
+      done: 0,
+      total: 8,
+      tone: "teal",
+      items: [],
+    };
+    setGoals((prev) => [goal, ...prev]);
+    setName("");
+    setModal(false);
+    setOpenId(id);
+  }
+
+  return (
+    <Shell footer={<TabBar active="home" onHistory={goHistory} />}>
+      <div className="flex items-baseline justify-between pt-1">
+        <p className="text-[15px] font-semibold tracking-tight">Squares</p>
+        <p className="text-[11px] text-[#9aa0a6]">
+          {payload.weekCount} this week
+        </p>
+      </div>
+      <p className="mt-1 text-[11px] text-[#9aa0a6]">
+        You moved forward. No streaks.
+      </p>
+      {payload.last7 ? (
+        <WeekStrip days={payload.last7} onOpen={goHistory} />
+      ) : null}
+      <div className="mt-3 space-y-2">
+        <button
+          type="button"
+          aria-label="New goal"
+          onClick={() => setModal(true)}
+          className="flex w-full items-center justify-center rounded-2xl py-3.5 border border-dashed border-[#5eead4]/40"
+        >
+          <span className="text-[22px] leading-none text-[#5eead4]">+</span>
+        </button>
+        {goals.map((g) => (
+          <button
+            key={g.id}
+            type="button"
+            onClick={() => setOpenId(g.id)}
+            className="w-full rounded-2xl bg-[#1c1c21] px-3 py-2.5 text-left ring-1 ring-white/5 active:scale-[0.99]"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-[13px] font-medium leading-snug">{g.name}</p>
+              <p className="shrink-0 text-[10px] tabular-nums text-[#9aa0a6]">
+                {g.done}/{g.total}
+              </p>
+            </div>
+            <div className="mt-2">
+              <SquareGrid
+                done={g.done}
+                total={g.total}
+                tone={g.tone}
+                cols={8}
+              />
+            </div>
+          </button>
+        ))}
+      </div>
+      {modal ? (
+        <div className="absolute inset-0 z-30 flex items-end bg-black/55">
+          <form
+            className="w-full rounded-t-2xl bg-[#1c1c21] px-4 pb-5 pt-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              addGoal();
+            }}
+          >
+            <p className="text-[13px] font-medium">New goal</p>
+            <input
+              autoFocus
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Name"
+              className="mt-3 w-full rounded-xl bg-[#111113] px-3 py-2.5 text-[13px] outline-none ring-1 ring-white/10 placeholder:text-[#6b7280]"
+            />
+            <div className="mt-3 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModal(false);
+                  setName("");
+                }}
+                className="flex-1 rounded-xl py-2.5 text-[13px] text-[#9aa0a6] ring-1 ring-white/10"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!name.trim()}
+                className="flex-1 rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] disabled:opacity-40"
+              >
+                Add
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
+    </Shell>
   );
-  const picked = steps.filter((s) => on[s.id]).length;
+}
+
+function GoalOutline({
+  title,
+  items: initial,
+  onBack,
+  onStart,
+  onItems,
+}: {
+  title: string;
+  items: OutlineItem[];
+  onBack?: () => void;
+  onStart?: () => void;
+  onItems?: (items: OutlineItem[]) => void;
+}) {
+  const [items, setItems] = useState<OutlineItem[]>(initial);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
+  const [hideDone, setHideDone] = useState(true);
+  const picked = items.filter((i) => selected[i.id] && !i.done).length;
+  const visible = hideDone ? items.filter((i) => !i.done) : items;
 
   return (
     <Shell>
-      <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
-        Focus
-      </p>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        {onBack ? (
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-[11px] text-[#5eead4]"
+          >
+            Back
+          </button>
+        ) : (
+          <span />
+        )}
+        <button
+          type="button"
+          onClick={() => setHideDone((v) => !v)}
+          className="text-[11px] text-[#9aa0a6]"
+        >
+          {hideDone ? "Show completed" : "Hide completed"}
+        </button>
+      </div>
       <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
-        Choose squares
+        {title}
       </p>
-      {payload.goalName ? (
-        <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
-      ) : null}
-      <ul className="mt-4 space-y-2">
-        {steps.map((s) => {
-          const checked = !!on[s.id];
+      <ul className="mt-3">
+        {visible.map((s) => {
+          const on = !!selected[s.id];
+          const done = !!s.done;
           return (
-            <li key={s.id}>
-              <button
-                type="button"
-                aria-pressed={checked}
-                onClick={() =>
-                  setOn((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
-                }
-                className="flex w-full items-center gap-2 rounded-2xl bg-[#1c1c21] px-3 py-3 text-left ring-1 ring-white/5"
+            <li
+              key={s.id}
+              className="border-b border-white/5"
+              style={{ paddingLeft: 8 + s.depth * 16 }}
+            >
+              <div
+                className={[
+                  "flex items-center gap-2 py-2 pr-1",
+                  on && !done ? "rounded-md bg-[#5eead4]/10" : "",
+                ].join(" ")}
               >
-                <span
-                  className="inline-block h-4 w-4 shrink-0 rounded-[3px] ring-1"
-                  style={{
-                    background: checked ? TONE.teal : "transparent",
-                    boxShadow: `inset 0 0 0 1px ${checked ? TONE.teal : "#5eead4"}`,
+                <button
+                  type="button"
+                  aria-label={done ? `Reopen ${s.label}` : `Complete ${s.label}`}
+                  aria-pressed={done}
+                  onClick={() => {
+                    const next = items.map((i) =>
+                      i.id === s.id ? { ...i, done: !i.done } : i,
+                    );
+                    setItems(next);
+                    onItems?.(next);
+                    setSelected((prev) => ({ ...prev, [s.id]: false }));
                   }}
-                />
-                <span className="min-w-0 flex-1 text-[13px] leading-snug">
+                  className="shrink-0"
+                >
+                  <span
+                    className="inline-block h-4 w-4 rounded-[3px]"
+                    style={{
+                      background: done ? TONE.teal : "transparent",
+                      boxShadow: `inset 0 0 0 1px ${done ? TONE.teal : "rgba(94,234,212,0.5)"}`,
+                    }}
+                  />
+                </button>
+                <button
+                  type="button"
+                  disabled={done}
+                  aria-pressed={on}
+                  onClick={() =>
+                    setSelected((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                  }
+                  className={[
+                    "min-w-0 flex-1 py-0.5 text-left text-[13px] leading-snug",
+                    done ? "text-[#6b7280] line-through" : "",
+                    on && !done ? "text-[#5eead4]" : "",
+                  ].join(" ")}
+                >
                   {s.label}
-                </span>
-              </button>
+                </button>
+              </div>
             </li>
           );
         })}
       </ul>
-      <p className="mt-2 text-center text-[11px] tabular-nums text-[#9aa0a6]">
-        {picked}/{steps.length} this session
-      </p>
-      {primary ? (
+      <p className="px-2 py-2.5 text-[13px] text-[#6b7280]">List item</p>
+      {onStart ? (
         <button
           type="button"
           disabled={picked === 0}
-          onClick={() => onChoice(primary)}
+          onClick={onStart}
           className={[
-            "mt-3 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
+            "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
             picked > 0
               ? "bg-[#5eead4] text-[#042f2e]"
               : "bg-[#1c1c21] text-[#6b7280]",
           ].join(" ")}
         >
-          {primary.label}
+          Start
         </button>
       ) : null}
     </Shell>

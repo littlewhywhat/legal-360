@@ -2,6 +2,26 @@ import type { Scene } from "@demo/runtime";
 
 export const TOTAL_STEPS = 6;
 
+const launchItems = [
+  { id: "landing", label: "Landing page", depth: 0 },
+  { id: "hero", label: "Write hero copy", depth: 1 },
+  { id: "cta", label: "Add CTA", depth: 1 },
+  { id: "mobile", label: "Fix mobile layout", depth: 1 },
+  { id: "api", label: "Backend API", depth: 0, done: true },
+  { id: "sketch", label: "Sketch endpoints", depth: 1, done: true },
+];
+
+const spanishItems = [
+  { id: "vocab", label: "Vocab", depth: 0 },
+  { id: "cards", label: "Review 5 cards", depth: 1 },
+  { id: "say", label: "Say 3 sentences out loud", depth: 1 },
+];
+
+const fitItems = [
+  { id: "walk", label: "Walk", depth: 0 },
+  { id: "ten", label: "10-minute walk", depth: 1, done: true },
+];
+
 const goalsBefore = [
   {
     id: "launch",
@@ -9,7 +29,8 @@ const goalsBefore = [
     done: 11,
     total: 24,
     tone: "teal",
-    nextScene: "s2-pick-steps",
+    items: launchItems,
+    startScene: "s3-ready",
   },
   {
     id: "spanish",
@@ -17,6 +38,7 @@ const goalsBefore = [
     done: 6,
     total: 8,
     tone: "violet",
+    items: spanishItems,
   },
   {
     id: "fit",
@@ -24,6 +46,7 @@ const goalsBefore = [
     done: 5,
     total: 8,
     tone: "amber",
+    items: fitItems,
   },
 ];
 
@@ -34,6 +57,7 @@ const goalsAfter = [
     done: 13,
     total: 24,
     tone: "teal",
+    items: launchItems,
   },
   {
     id: "spanish",
@@ -41,6 +65,7 @@ const goalsAfter = [
     done: 6,
     total: 8,
     tone: "violet",
+    items: spanishItems,
   },
   {
     id: "fit",
@@ -48,6 +73,7 @@ const goalsAfter = [
     done: 5,
     total: 8,
     tone: "amber",
+    items: fitItems,
   },
 ];
 
@@ -145,30 +171,13 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goals",
-    hint: "Tap a goal to start — or the week strip for History",
+    hint: "Tap + for a new goal, or a goal to open its list",
     payload: {
       mode: "home",
       weekCount: 12,
       goals: goalsBefore,
       last7,
       historyScene: "s7-history",
-    },
-  },
-  {
-    id: "s2-pick-steps",
-    step: 2,
-    totalSteps: TOTAL_STEPS,
-    device: "client",
-    app: "squares",
-    title: "Choose squares",
-    hint: "Check the squares for this session.",
-    choices: [
-      { id: "ready", label: "Continue", next: "s3-ready", variant: "primary" },
-    ],
-    payload: {
-      mode: "pick-steps",
-      goalName: "Launch my side project",
-      steps: landingSteps,
     },
   },
   {
