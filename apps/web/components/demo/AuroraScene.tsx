@@ -149,12 +149,7 @@ function MiniMap({
 }
 
 function ScoreMark({ n }: { n: number }) {
-  return (
-    <>
-      <span className="text-[0.72em] font-semibold opacity-70">P</span>
-      {n}%
-    </>
-  );
+  return <>P {n}%</>;
 }
 
 function Badge({ n, onClick }: { n: number; onClick?: () => void }) {
