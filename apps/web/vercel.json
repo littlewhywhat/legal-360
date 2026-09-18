@@ -5,5 +5,9 @@
   "buildCommand": "cd ../.. && pnpm --filter web build",
   "outputDirectory": "out",
   "cleanUrls": true,
-  "trailingSlash": true
+  "trailingSlash": true,
+  "rewrites": [
+    { "source": "/:case", "destination": "/:case/index.html" },
+    { "source": "/:case/:scene", "destination": "/:case/:scene/index.html" }
+  ]
 }

@@ -5,5 +5,9 @@
   "outputDirectory": "apps/web/out",
   "cleanUrls": true,
   "trailingSlash": true,
+  "rewrites": [
+    { "source": "/:case", "destination": "/:case/index.html" },
+    { "source": "/:case/:scene", "destination": "/:case/:scene/index.html" }
+  ],
   "ignoreCommand": "exit 1"
 }
