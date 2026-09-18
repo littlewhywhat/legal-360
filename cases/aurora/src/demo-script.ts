@@ -58,9 +58,9 @@ export const shore: Place = {
   y: 24,
   best: true,
   nights: [
-    { id: "n0", label: "12 сен", oval: 81, cloud: 8, dark: true },
-    { id: "n1", label: "3 сен", oval: 68, cloud: 22, dark: true },
-    { id: "n2", label: "18 авг", oval: 77, cloud: 16, dark: true },
+    { id: "n0", label: "12 сен 2026", oval: 81, cloud: 8, dark: true },
+    { id: "n1", label: "3 сен 2026", oval: 68, cloud: 22, dark: true },
+    { id: "n2", label: "18 авг 2026", oval: 77, cloud: 16, dark: true },
   ],
   reviews: [
     { who: "Аня", text: "Столб над водой, двадцать минут — и всё небо." },
@@ -100,9 +100,9 @@ export const plateau: Place = {
   x: 60,
   y: 40,
   nights: [
-    { id: "n0", label: "9 сен", oval: 73, cloud: 18, dark: true },
-    { id: "n1", label: "1 сен", oval: 64, cloud: 30, dark: true },
-    { id: "n2", label: "11 авг", oval: 70, cloud: 24, dark: true },
+    { id: "n0", label: "9 сен 2026", oval: 73, cloud: 18, dark: true },
+    { id: "n1", label: "1 сен 2026", oval: 64, cloud: 30, dark: true },
+    { id: "n2", label: "11 авг 2026", oval: 70, cloud: 24, dark: true },
   ],
   reviews: [
     { who: "Олег", text: "Горизонт на 360. Ветер, но овал виден целиком." },
@@ -138,9 +138,9 @@ export const lake: Place = {
   x: 38,
   y: 70,
   nights: [
-    { id: "n0", label: "14 сен", oval: 69, cloud: 20, dark: true },
-    { id: "n1", label: "29 авг", oval: 75, cloud: 14, dark: true },
-    { id: "n2", label: "7 авг", oval: 62, cloud: 28, dark: true },
+    { id: "n0", label: "14 сен 2026", oval: 69, cloud: 20, dark: true },
+    { id: "n1", label: "29 авг 2026", oval: 75, cloud: 14, dark: true },
+    { id: "n2", label: "7 авг 2026", oval: 62, cloud: 28, dark: true },
   ],
   reviews: [
     { who: "Ира", text: "Отражение в воде — как второй овал." },
@@ -177,9 +177,9 @@ export const hill: Place = {
   y: 46,
   nearest: true,
   nights: [
-    { id: "n0", label: "16 сен", oval: 70, cloud: 26, dark: true },
-    { id: "n1", label: "5 сен", oval: 66, cloud: 18, dark: true },
-    { id: "n2", label: "21 авг", oval: 78, cloud: 12, dark: true },
+    { id: "n0", label: "16 сен 2026", oval: 70, cloud: 26, dark: true },
+    { id: "n1", label: "5 сен 2026", oval: 66, cloud: 18, dark: true },
+    { id: "n2", label: "21 авг 2026", oval: 78, cloud: 12, dark: true },
   ],
   reviews: [
     { who: "Ника", text: "Близко. Засветка снизу, смотреть на север." },

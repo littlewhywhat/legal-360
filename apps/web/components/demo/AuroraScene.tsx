@@ -148,20 +148,24 @@ function MiniMap({
   );
 }
 
+function ScoreMark({ n }: { n: number }) {
+  return <>P {n}%</>;
+}
+
 function Badge({ n, onClick }: { n: number; onClick?: () => void }) {
   const cls =
-    "inline-flex min-w-[2.4rem] items-center justify-center rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums text-[#052e1c]";
+    "inline-flex items-baseline gap-0.5 rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums text-[#052e1c]";
   const style = { background: tone(n) };
   if (onClick) {
     return (
       <button type="button" onClick={onClick} className={cls} style={style}>
-        {n}
+        <ScoreMark n={n} />
       </button>
     );
   }
   return (
     <span className={cls} style={style}>
-      {n}
+      <ScoreMark n={n} />
     </span>
   );
 }
@@ -304,8 +308,11 @@ export function AuroraScene({
                 <span className="text-[13px] font-semibold text-[#f3f6f4]">{nearest.name}</span>
                 <span className="text-[11px] tabular-nums text-[#9aa89f]">{nearest.km} км</span>
               </div>
-              <div className="text-[15px] font-semibold tabular-nums" style={{ color: tone(pSee(nearest)) }}>
-                {pSee(nearest)}
+              <div
+                className="flex items-baseline gap-0.5 text-[15px] font-semibold tabular-nums"
+                style={{ color: tone(pSee(nearest)) }}
+              >
+                <ScoreMark n={pSee(nearest)} />
               </div>
             </button>
           ) : null}
@@ -320,8 +327,11 @@ export function AuroraScene({
                 <span className="text-[13px] font-semibold text-[#f3f6f4]">{probable.name}</span>
                 <span className="text-[11px] tabular-nums text-[#9aa89f]">{probable.km} км</span>
               </div>
-              <div className="text-[15px] font-semibold tabular-nums" style={{ color: tone(pSee(probable)) }}>
-                {pSee(probable)}
+              <div
+                className="flex items-baseline gap-0.5 text-[15px] font-semibold tabular-nums"
+                style={{ color: tone(pSee(probable)) }}
+              >
+                <ScoreMark n={pSee(probable)} />
               </div>
             </button>
           ) : null}
@@ -367,18 +377,27 @@ export function AuroraScene({
               </div>
               <Badge n={n} onClick={() => onGo?.(`s4-${place.id}`)} />
             </div>
-            <div className="mt-3 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">когда было</div>
+            <div className="mt-3 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">последние разы</div>
             <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
-              {place.nights.map((night) => (
-                <button
-                  key={night.id}
-                  type="button"
-                  onClick={() => onGo?.(`s4-${place.id}-${night.id}`)}
-                  className="shrink-0 rounded-full bg-[#24302c] px-2.5 py-1 text-[11px] text-[#e8eee9] ring-1 ring-white/10"
-                >
-                  {night.label}
-                </button>
-              ))}
+              {place.nights.map((night) => {
+                const seen = pSee(night);
+                return (
+                  <button
+                    key={night.id}
+                    type="button"
+                    onClick={() => onGo?.(`s4-${place.id}-${night.id}`)}
+                    className="shrink-0 rounded-[0.85rem] bg-[#24302c] px-2.5 py-1.5 text-left ring-1 ring-white/10"
+                  >
+                    <div className="text-[11px] text-[#e8eee9]">{night.label}</div>
+                    <div
+                      className="mt-0.5 flex items-baseline gap-0.5 text-[11px] font-semibold tabular-nums"
+                      style={{ color: tone(seen) }}
+                    >
+                      <ScoreMark n={seen} />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
             <div className="mt-3 h-[92px] overflow-hidden rounded-[1.1rem] ring-1 ring-white/10">
               <MiniMap origin={payload.origin} place={place} />
@@ -420,10 +439,13 @@ export function AuroraScene({
             <div className="text-[11px] text-[#9aa89f]">
               {payload.night ? payload.night.label : "ближайшая ночь"}
             </div>
-            <div className="text-[20px] font-semibold text-[#f3f6f4]">P_see</div>
+            <div className="text-[20px] font-semibold text-[#f3f6f4]">P-score</div>
           </div>
-          <div className="text-[40px] font-semibold leading-none tabular-nums" style={{ color: tone(n) }}>
-            {n}
+          <div
+            className="flex items-baseline gap-0.5 text-[40px] font-semibold leading-none tabular-nums"
+            style={{ color: tone(n) }}
+          >
+            <ScoreMark n={n} />
           </div>
         </div>
         <p className="mt-2 text-[12px] text-[#c5d0c8]">овал × ясность × темнота</p>
