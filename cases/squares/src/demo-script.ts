@@ -247,15 +247,14 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Confirm",
-    hint: "Confirm what you finished. Added-in-session sit apart. Leftovers open the tree.",
+    hint: "Confirm what you finished. Added-in-session sit apart.",
     choices: [
-      { id: "done", label: "Confirm", next: "s7-home-after", variant: "primary" },
+      { id: "done", label: "Confirm", next: "s6-after", variant: "primary" },
     ],
     payload: {
       mode: "summary",
       duration: "20 min",
       goalName: "Launch my side project",
-      afterScene: "s6-after",
       steps: [
         { id: "hero", label: "Write hero copy", done: true },
         { id: "cta", label: "Add CTA", done: true },
@@ -275,14 +274,17 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "squares",
-    title: "After session",
-    hint: "New squares landed on the tree. Rearrange, start again, or Home.",
+    title: "Goal",
+    hint: "Same goal list — session changes flash in. Select and Next, or Back.",
+    choices: [
+      { id: "next", label: "Next", next: "s3-ready", variant: "primary" },
+    ],
     payload: {
-      mode: "after",
+      mode: "goal",
       goalName: "Launch my side project",
       outline: afterItems,
       homeScene: "s7-home-after",
-      goalScene: "s2-goal",
+      animateAdded: true,
     },
   },
   {

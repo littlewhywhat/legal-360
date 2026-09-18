@@ -62,7 +62,6 @@ type SquaresPayload = {
     | "ready"
     | "focus"
     | "summary"
-    | "after"
     | "history"
     | "insights";
   weekCount?: number;
@@ -74,11 +73,10 @@ type SquaresPayload = {
   steps?: StepItem[];
   timer?: string;
   finishTo?: string;
-  afterScene?: string;
   duration?: string;
+  animateAdded?: boolean;
   calendarWeeks?: CalendarWeek[];
   homeScene?: string;
-  goalScene?: string;
   insightsScene?: string;
   lines?: string[];
 };
@@ -279,6 +277,7 @@ export function SquaresScene({
         onBack={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
         onStart={primary ? () => onChoice(primary) : undefined}
         startLabel="Next"
+        animateAdded={payload.animateAdded}
       />
     );
   }
@@ -304,17 +303,6 @@ export function SquaresScene({
         payload={payload}
         primary={primary}
         onChoice={onChoice}
-        onGo={onGo}
-      />
-    );
-  }
-
-  if (payload.mode === "after") {
-    return (
-      <AfterTree
-        payload={payload}
-        onHome={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
-        onGoal={payload.goalScene ? () => onGo(payload.goalScene!) : undefined}
       />
     );
   }
@@ -415,6 +403,7 @@ function HomeView({
       total: 8,
       tone: "teal",
       items: [],
+      startScene: "s3-ready",
     };
     setGoals((prev) => [goal, ...prev]);
     setName("");
@@ -521,6 +510,7 @@ function GoalOutline({
   onStart,
   onItems,
   startLabel = "Next",
+  animateAdded = false,
 }: {
   title: string;
   items: OutlineItem[];
@@ -528,12 +518,32 @@ function GoalOutline({
   onStart?: () => void;
   onItems?: (items: OutlineItem[]) => void;
   startLabel?: string;
+  animateAdded?: boolean;
 }) {
   const [items, setItems] = useState<OutlineItem[]>(initial);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [hideDone, setHideDone] = useState(true);
+  const [hideDone, setHideDone] = useState(!animateAdded);
+  const [reveal, setReveal] = useState(!animateAdded);
   const picked = items.filter((i) => selected[i.id] && !i.done).length;
   const visible = hideDone ? items.filter((i) => !i.done) : items;
+
+  useEffect(() => {
+    if (!animateAdded) return;
+    const t = window.setTimeout(() => setReveal(true), 40);
+    return () => window.clearTimeout(t);
+  }, [animateAdded]);
+
+  function seedTasks() {
+    if (items.length > 0) return;
+    const next = [
+      { id: "seed-1", label: "Task one", depth: 0 },
+      { id: "seed-2", label: "Subtask A", depth: 1 },
+      { id: "seed-3", label: "Subtask B", depth: 1 },
+      { id: "seed-4", label: "Task two", depth: 0 },
+    ];
+    setItems(next);
+    onItems?.(next);
+  }
 
   return (
     <Shell>
@@ -564,12 +574,18 @@ function GoalOutline({
         {visible.map((s) => {
           const on = !!selected[s.id];
           const done = !!s.done;
+          const flash = animateAdded && !!s.added;
           return (
             <li key={s.id} className="border-b border-white/5">
               <div
                 className={[
-                  "-mx-3.5 flex items-center gap-2 py-2 pr-3.5",
+                  "-mx-3.5 flex items-center gap-2 py-2 pr-3.5 transition duration-500",
                   on && !done ? "bg-[#5eead4]/15" : "",
+                  flash && !on
+                    ? reveal
+                      ? "bg-[#5eead4]/10"
+                      : "translate-y-1 opacity-0"
+                    : "",
                 ].join(" ")}
                 style={{ paddingLeft: 14 + s.depth * 16 }}
               >
@@ -615,7 +631,17 @@ function GoalOutline({
           );
         })}
       </ul>
-      <p className="px-2 py-2.5 text-[13px] text-[#6b7280]">List item</p>
+      {items.length === 0 ? (
+        <button
+          type="button"
+          onClick={seedTasks}
+          className="w-full px-2 py-2.5 text-left text-[13px] text-[#6b7280]"
+        >
+          List item
+        </button>
+      ) : (
+        <p className="px-2 py-2.5 text-[13px] text-[#6b7280]">List item</p>
+      )}
       {onStart ? (
         <button
           type="button"
@@ -720,12 +746,10 @@ function ConfirmSession({
   payload,
   primary,
   onChoice,
-  onGo,
 }: {
   payload: SquaresPayload;
   primary?: Choice;
   onChoice: (choice: Choice) => void;
-  onGo: (id: string) => void;
 }) {
   const steps = payload.steps ?? [];
   const planned = steps.filter((s) => !s.added);
@@ -796,11 +820,7 @@ function ConfirmSession({
       <p className="mt-1 text-center text-[12px] text-[#9aa0a6]">squares</p>
       <button
         type="button"
-        onClick={() => {
-          const leftover = added.some((s) => !on[s.id]);
-          if (leftover && payload.afterScene) onGo(payload.afterScene);
-          else if (primary) onChoice(primary);
-        }}
+        onClick={() => primary && onChoice(primary)}
         className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
       >
         {primary?.label ?? "Confirm"}
@@ -909,115 +929,6 @@ function FocusMode({
       >
         End early
       </button>
-    </Shell>
-  );
-}
-
-function AfterTree({
-  payload,
-  onHome,
-  onGoal,
-}: {
-  payload: SquaresPayload;
-  onHome?: () => void;
-  onGoal?: () => void;
-}) {
-  const [items, setItems] = useState<OutlineItem[]>(() => payload.outline ?? []);
-  const [show, setShow] = useState(false);
-  useEffect(() => {
-    const t = window.setTimeout(() => setShow(true), 40);
-    return () => window.clearTimeout(t);
-  }, []);
-
-  function move(index: number, dir: -1 | 1) {
-    const next = index + dir;
-    if (next < 0 || next >= items.length) return;
-    const copy = [...items];
-    const [row] = copy.splice(index, 1);
-    copy.splice(next, 0, row);
-    setItems(copy);
-  }
-
-  return (
-    <Shell>
-      <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
-        After session
-      </p>
-      <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
-        {payload.goalName}
-      </p>
-      <p className="mt-1 text-[11px] text-[#9aa0a6]">Tree updated</p>
-      <ul className="mt-3">
-        {items.map((s, i) => (
-          <li
-            key={s.id}
-            className={[
-              "border-b border-white/5 transition duration-500",
-              s.added
-                ? show
-                  ? "translate-y-0 opacity-100"
-                  : "translate-y-2 opacity-0"
-                : "",
-            ].join(" ")}
-          >
-            <div
-              className="flex items-center gap-2 py-2"
-              style={{ paddingLeft: 8 + s.depth * 16 }}
-            >
-              <span
-                className="inline-block h-4 w-4 shrink-0 rounded-[3px]"
-                style={{
-                  background: s.done ? TONE.teal : "transparent",
-                  boxShadow: `inset 0 0 0 1px ${s.done ? TONE.teal : "rgba(94,234,212,0.5)"}`,
-                }}
-              />
-              <span
-                className={[
-                  "min-w-0 flex-1 text-[13px] leading-snug",
-                  s.done ? "text-[#6b7280] line-through" : "",
-                  s.added && !s.done ? "text-[#5eead4]" : "",
-                ].join(" ")}
-              >
-                {s.label}
-              </span>
-              <button
-                type="button"
-                aria-label={`Move ${s.label} up`}
-                onClick={() => move(i, -1)}
-                className="px-1 text-[11px] text-[#6b7280]"
-              >
-                ↑
-              </button>
-              <button
-                type="button"
-                aria-label={`Move ${s.label} down`}
-                onClick={() => move(i, 1)}
-                className="px-1 text-[11px] text-[#6b7280]"
-              >
-                ↓
-              </button>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {onGoal ? (
-        <button
-          type="button"
-          onClick={onGoal}
-          className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
-        >
-          Start session
-        </button>
-      ) : null}
-      {onHome ? (
-        <button
-          type="button"
-          onClick={onHome}
-          className="mt-2 w-full rounded-xl py-2.5 text-[13px] text-[#9aa0a6] ring-1 ring-white/10"
-        >
-          Home
-        </button>
-      ) : null}
     </Shell>
   );
 }
