@@ -523,14 +523,20 @@ function GoalOutline({
   const [items, setItems] = useState<OutlineItem[]>(initial);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [hideDone, setHideDone] = useState(!animateAdded);
-  const [reveal, setReveal] = useState(!animateAdded);
+  const [phase, setPhase] = useState<"in" | "flash" | "done">(
+    animateAdded ? "in" : "done",
+  );
   const picked = items.filter((i) => selected[i.id] && !i.done).length;
   const visible = hideDone ? items.filter((i) => !i.done) : items;
 
   useEffect(() => {
     if (!animateAdded) return;
-    const t = window.setTimeout(() => setReveal(true), 40);
-    return () => window.clearTimeout(t);
+    const flash = window.setTimeout(() => setPhase("flash"), 30);
+    const done = window.setTimeout(() => setPhase("done"), 700);
+    return () => {
+      window.clearTimeout(flash);
+      window.clearTimeout(done);
+    };
   }, [animateAdded]);
 
   function seedTasks() {
@@ -574,18 +580,17 @@ function GoalOutline({
         {visible.map((s) => {
           const on = !!selected[s.id];
           const done = !!s.done;
-          const flash = animateAdded && !!s.added;
+          const added = animateAdded && !!s.added;
           return (
             <li key={s.id} className="border-b border-white/5">
               <div
                 className={[
                   "-mx-3.5 flex items-center gap-2 py-2 pr-3.5 transition duration-500",
                   on && !done ? "bg-[#5eead4]/15" : "",
-                  flash && !on
-                    ? reveal
-                      ? "bg-[#5eead4]/10"
-                      : "translate-y-1 opacity-0"
+                  added && phase === "in" && !on
+                    ? "translate-y-1 opacity-0"
                     : "",
+                  added && phase === "flash" && !on ? "bg-[#5eead4]/15" : "",
                 ].join(" ")}
                 style={{ paddingLeft: 14 + s.depth * 16 }}
               >
