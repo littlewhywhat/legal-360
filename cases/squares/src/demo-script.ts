@@ -30,7 +30,7 @@ const goalsBefore = [
     total: 24,
     tone: "teal",
     items: launchItems,
-    startScene: "s3-ready",
+    openScene: "s2-goal",
   },
   {
     id: "spanish",
@@ -58,6 +58,7 @@ const goalsAfter = [
     total: 24,
     tone: "teal",
     items: launchItems,
+    openScene: "s2-goal",
   },
   {
     id: "spanish",
@@ -80,15 +81,22 @@ const goalsAfter = [
 const landingSteps = [
   { id: "hero", label: "Write hero copy" },
   { id: "cta", label: "Add CTA" },
+  { id: "mobile", label: "Fix mobile layout" },
+];
+
+const afterItems = [
+  { id: "landing", label: "Landing page", depth: 0 },
+  { id: "hero", label: "Write hero copy", depth: 1, done: true },
+  { id: "cta", label: "Add CTA", depth: 1, done: true },
+  { id: "mobile", label: "Fix mobile layout", depth: 1 },
   {
-    id: "mobile",
-    label: "Fix mobile layout",
-    tooBig: true,
-    splitInto: [
-      { id: "breakpoints", label: "Check breakpoints" },
-      { id: "nav", label: "Fix nav wrap" },
-    ],
+    id: "breakpoints",
+    label: "Check breakpoints",
+    depth: 1,
+    added: true,
   },
+  { id: "api", label: "Backend API", depth: 0, done: true },
+  { id: "sketch", label: "Sketch endpoints", depth: 1, done: true },
 ];
 
 const DAY = ["S", "M", "T", "W", "T", "F", "S"] as const;
@@ -171,13 +179,31 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goals",
-    hint: "Tap + for a new goal, or a goal to open its list",
+    hint: "Tap a goal, or + under the list for a new one",
     payload: {
       mode: "home",
       weekCount: 12,
       goals: goalsBefore,
       last7,
-      historyScene: "s7-history",
+      historyScene: "s8-history",
+    },
+  },
+  {
+    id: "s2-goal",
+    step: 2,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "squares",
+    title: "Goal",
+    hint: "Checkbox completes. Tap text for this session. Next.",
+    choices: [
+      { id: "next", label: "Next", next: "s3-ready", variant: "primary" },
+    ],
+    payload: {
+      mode: "goal",
+      goalName: "Launch my side project",
+      outline: launchItems,
+      homeScene: "s1-home",
     },
   },
   {
@@ -187,7 +213,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Ready",
-    hint: "Timer is set. Start when you are.",
+    hint: "Set the timer, then Start.",
     choices: [
       { id: "start", label: "Start", next: "s4-focus", variant: "primary" },
     ],
@@ -205,7 +231,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Focus",
-    hint: "Fill squares in any order. End session when you want.",
+    hint: "Rename or add squares. End early or tap the timer when time is up.",
     payload: {
       mode: "focus",
       timer: "20:00",
@@ -221,23 +247,46 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Confirm",
-    hint: "Confirm what you finished. Not every square.",
+    hint: "Confirm what you finished. Added-in-session sit apart. Leftovers open the tree.",
     choices: [
-      { id: "done", label: "Confirm", next: "s6-home-after", variant: "primary" },
+      { id: "done", label: "Confirm", next: "s7-home-after", variant: "primary" },
     ],
     payload: {
       mode: "summary",
       duration: "20 min",
       goalName: "Launch my side project",
+      afterScene: "s6-after",
       steps: [
         { id: "hero", label: "Write hero copy", done: true },
         { id: "cta", label: "Add CTA", done: true },
         { id: "mobile", label: "Fix mobile layout", done: false },
+        {
+          id: "breakpoints",
+          label: "Check breakpoints",
+          done: false,
+          added: true,
+        },
       ],
     },
   },
   {
-    id: "s6-home-after",
+    id: "s6-after",
+    step: 5,
+    totalSteps: TOTAL_STEPS,
+    device: "client",
+    app: "squares",
+    title: "After session",
+    hint: "New squares landed on the tree. Rearrange, start again, or Home.",
+    payload: {
+      mode: "after",
+      goalName: "Launch my side project",
+      outline: afterItems,
+      homeScene: "s7-home-after",
+      goalScene: "s2-goal",
+    },
+  },
+  {
+    id: "s7-home-after",
     step: 5,
     totalSteps: TOTAL_STEPS,
     device: "client",
@@ -249,11 +298,11 @@ export const scenes: Scene[] = [
       weekCount: 14,
       goals: goalsAfter,
       last7,
-      historyScene: "s7-history",
+      historyScene: "s8-history",
     },
   },
   {
-    id: "s7-history",
+    id: "s8-history",
     step: 6,
     totalSteps: TOTAL_STEPS,
     device: "client",
@@ -262,13 +311,13 @@ export const scenes: Scene[] = [
     hint: "One square per day. Tap Wednesday for that day's stats.",
     payload: {
       mode: "history",
-      homeScene: "s6-home-after",
-      insightsScene: "s8-insights",
+      homeScene: "s7-home-after",
+      insightsScene: "s9-insights",
       calendarWeeks,
     },
   },
   {
-    id: "s8-insights",
+    id: "s9-insights",
     step: 6,
     totalSteps: TOTAL_STEPS,
     device: "client",
@@ -278,7 +327,7 @@ export const scenes: Scene[] = [
     next: "s1-home",
     payload: {
       mode: "insights",
-      homeScene: "s6-home-after",
+      homeScene: "s7-home-after",
       lines: [
         "You completed 43 squares this week.",
         "Wednesday was the busiest day — 7 squares.",

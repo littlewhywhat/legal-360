@@ -6,12 +6,12 @@ Notion is import-only (out of this prototype). No guilt streaks. Copy: “You mo
 
 ## Happy path
 
-1. Home — last-7-days GitHub strip; `+` tile (name modal) then goals. Tap a goal.
-2. Goal — canned Keep-style list. Checkbox = done. Tap text = this session. Show/hide completed. Start.
-3. Ready — pomodoro timer set, not running. Start.
-4. Focus Mode — chosen squares, any order. End session when you want.
-5. Confirm — check what you finished (not every square). Confirm.
-6. Home — same goal, more squares filled. Tap the week strip → History.
+1. Home — last-7-days GitHub strip; goals; `+` under the list (name modal). Tap a goal.
+2. Goal — canned Keep-style list. Checkbox = done. Tap text = this session (full-width highlight). Next.
+3. Ready — set timer (presets / ±5). Start.
+4. Focus — rename, add squares (this is split). End early or tap timer.
+5. Confirm — planned vs added-in-session. Confirm.
+6. After — leftover new squares land on the tree. Rearrange, start again, or Home.
 7. History — GitHub calendar (one square per day). Tap a day → that day's stats.
 
 ```mermaid
@@ -22,21 +22,17 @@ sequenceDiagram
   participant Ready
   participant Focus
   participant Confirm
+  participant After
   participant History
-  participant Day
 
-  You->>Home: Tap + or a goal
-  Home->>Goal: Keep list
-  You->>Goal: Select squares
-  Goal->>Ready: 20 min set
+  You->>Home: Tap a goal
+  Home->>Goal: List
+  You->>Goal: Select + Next
+  Goal->>Ready: Set timer
   You->>Ready: Start
-  Ready->>Focus: Timer running
-  You->>Focus: Fill squares in any order
+  Ready->>Focus: Running
+  You->>Focus: Add / rename / End early
   Focus->>Confirm: What did you finish?
-  You->>Confirm: Check done squares
-  Confirm->>Home: Goal grid updated
-  You->>Home: Tap last 7 days
-  Home->>History: GitHub calendar
-  You->>History: Tap a day square
-  History->>Day: Stats for that day
+  Confirm->>After: Leftover new squares
+  You->>After: Start session or Home
 ```

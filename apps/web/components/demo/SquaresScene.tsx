@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Choice } from "@demo/runtime";
 
 type Tone = "teal" | "violet" | "amber";
@@ -13,6 +13,7 @@ type GoalCard = {
   tone: Tone;
   items?: OutlineItem[];
   startScene?: string;
+  openScene?: string;
 };
 
 type OutlineItem = {
@@ -20,14 +21,14 @@ type OutlineItem = {
   label: string;
   depth: number;
   done?: boolean;
+  added?: boolean;
 };
 
 type StepItem = {
   id: string;
   label: string;
   done?: boolean;
-  tooBig?: boolean;
-  splitInto?: StepItem[];
+  added?: boolean;
 };
 
 type DayGroup = {
@@ -57,9 +58,11 @@ type CalendarWeek = {
 type SquaresPayload = {
   mode:
     | "home"
+    | "goal"
     | "ready"
     | "focus"
     | "summary"
+    | "after"
     | "history"
     | "insights";
   weekCount?: number;
@@ -67,12 +70,15 @@ type SquaresPayload = {
   last7?: CalendarDay[];
   historyScene?: string;
   goalName?: string;
+  outline?: OutlineItem[];
   steps?: StepItem[];
   timer?: string;
   finishTo?: string;
+  afterScene?: string;
   duration?: string;
   calendarWeeks?: CalendarWeek[];
   homeScene?: string;
+  goalScene?: string;
   insightsScene?: string;
   lines?: string[];
 };
@@ -265,6 +271,18 @@ export function SquaresScene({
     return <HomeView payload={payload} onGo={onGo} />;
   }
 
+  if (payload.mode === "goal") {
+    return (
+      <GoalOutline
+        title={payload.goalName ?? ""}
+        items={payload.outline ?? []}
+        onBack={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
+        onStart={primary ? () => onChoice(primary) : undefined}
+        startLabel="Next"
+      />
+    );
+  }
+
   if (payload.mode === "ready") {
     return (
       <ReadyTimer payload={payload} primary={primary} onChoice={onChoice} />
@@ -282,7 +300,22 @@ export function SquaresScene({
 
   if (payload.mode === "summary") {
     return (
-      <ConfirmSession payload={payload} primary={primary} onChoice={onChoice} />
+      <ConfirmSession
+        payload={payload}
+        primary={primary}
+        onChoice={onChoice}
+        onGo={onGo}
+      />
+    );
+  }
+
+  if (payload.mode === "after") {
+    return (
+      <AfterTree
+        payload={payload}
+        onHome={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
+        onGoal={payload.goalScene ? () => onGo(payload.goalScene!) : undefined}
+      />
     );
   }
 
@@ -361,6 +394,7 @@ function HomeView({
         items={open.items ?? []}
         onBack={() => setOpenId(null)}
         onStart={open.startScene ? () => onGo(open.startScene!) : undefined}
+        startLabel="Next"
         onItems={(items) =>
           setGoals((prev) =>
             prev.map((g) => (g.id === open.id ? { ...g, items } : g)),
@@ -403,19 +437,13 @@ function HomeView({
         <WeekStrip days={payload.last7} onOpen={goHistory} />
       ) : null}
       <div className="mt-3 space-y-2">
-        <button
-          type="button"
-          aria-label="New goal"
-          onClick={() => setModal(true)}
-          className="flex w-full items-center justify-center rounded-2xl py-3.5 border border-dashed border-[#5eead4]/40"
-        >
-          <span className="text-[22px] leading-none text-[#5eead4]">+</span>
-        </button>
         {goals.map((g) => (
           <button
             key={g.id}
             type="button"
-            onClick={() => setOpenId(g.id)}
+            onClick={() =>
+              g.openScene ? onGo(g.openScene) : setOpenId(g.id)
+            }
             className="w-full rounded-2xl bg-[#1c1c21] px-3 py-2.5 text-left ring-1 ring-white/5 active:scale-[0.99]"
           >
             <div className="flex items-baseline justify-between gap-2">
@@ -434,6 +462,14 @@ function HomeView({
             </div>
           </button>
         ))}
+        <button
+          type="button"
+          aria-label="New goal"
+          onClick={() => setModal(true)}
+          className="flex w-full items-center justify-center rounded-2xl py-3.5 border border-dashed border-[#5eead4]/40"
+        >
+          <span className="text-[22px] leading-none text-[#5eead4]">+</span>
+        </button>
       </div>
       {modal ? (
         <div className="absolute inset-0 z-30 flex items-end bg-black/55">
@@ -484,12 +520,14 @@ function GoalOutline({
   onBack,
   onStart,
   onItems,
+  startLabel = "Next",
 }: {
   title: string;
   items: OutlineItem[];
   onBack?: () => void;
   onStart?: () => void;
   onItems?: (items: OutlineItem[]) => void;
+  startLabel?: string;
 }) {
   const [items, setItems] = useState<OutlineItem[]>(initial);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
@@ -527,16 +565,13 @@ function GoalOutline({
           const on = !!selected[s.id];
           const done = !!s.done;
           return (
-            <li
-              key={s.id}
-              className="border-b border-white/5"
-              style={{ paddingLeft: 8 + s.depth * 16 }}
-            >
+            <li key={s.id} className="border-b border-white/5">
               <div
                 className={[
-                  "flex items-center gap-2 py-2 pr-1",
-                  on && !done ? "rounded-md bg-[#5eead4]/10" : "",
+                  "-mx-3.5 flex items-center gap-2 py-2 pr-3.5",
+                  on && !done ? "bg-[#5eead4]/15" : "",
                 ].join(" ")}
+                style={{ paddingLeft: 14 + s.depth * 16 }}
               >
                 <button
                   type="button"
@@ -593,7 +628,7 @@ function GoalOutline({
               : "bg-[#1c1c21] text-[#6b7280]",
           ].join(" ")}
         >
-          Start
+          {startLabel}
         </button>
       ) : null}
     </Shell>
@@ -610,6 +645,10 @@ function ReadyTimer({
   onChoice: (choice: Choice) => void;
 }) {
   const steps = payload.steps ?? [];
+  const initial = Number.parseInt(payload.timer ?? "20", 10) || 20;
+  const [mins, setMins] = useState(initial);
+  const presets = [15, 20, 25, 30];
+
   return (
     <Shell>
       <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
@@ -618,9 +657,44 @@ function ReadyTimer({
       <p className="mt-2 text-center text-[13px] font-medium">
         {payload.goalName}
       </p>
-      <p className="mt-8 text-center font-[family-name:var(--font-display)] text-[48px] leading-none tabular-nums tracking-tight">
-        {payload.timer}
-      </p>
+      <div className="mt-6 flex items-center justify-center gap-4">
+        <button
+          type="button"
+          aria-label="Minus 5 minutes"
+          onClick={() => setMins((m) => Math.max(5, m - 5))}
+          className="h-9 w-9 rounded-full text-[18px] text-[#9aa0a6] ring-1 ring-white/10"
+        >
+          −
+        </button>
+        <p className="font-[family-name:var(--font-display)] text-[48px] leading-none tabular-nums tracking-tight">
+          {String(mins).padStart(2, "0")}:00
+        </p>
+        <button
+          type="button"
+          aria-label="Plus 5 minutes"
+          onClick={() => setMins((m) => Math.min(60, m + 5))}
+          className="h-9 w-9 rounded-full text-[18px] text-[#9aa0a6] ring-1 ring-white/10"
+        >
+          +
+        </button>
+      </div>
+      <div className="mt-3 flex justify-center gap-1.5">
+        {presets.map((p) => (
+          <button
+            key={p}
+            type="button"
+            onClick={() => setMins(p)}
+            className={[
+              "rounded-full px-2.5 py-1 text-[11px]",
+              mins === p
+                ? "bg-[#5eead4] text-[#042f2e]"
+                : "text-[#9aa0a6] ring-1 ring-white/10",
+            ].join(" ")}
+          >
+            {p}m
+          </button>
+        ))}
+      </div>
       <ul className="mt-6 space-y-1.5">
         {steps.map((s) => (
           <li key={s.id} className="flex items-center gap-2 text-[13px]">
@@ -646,16 +720,50 @@ function ConfirmSession({
   payload,
   primary,
   onChoice,
+  onGo,
 }: {
   payload: SquaresPayload;
   primary?: Choice;
   onChoice: (choice: Choice) => void;
+  onGo: (id: string) => void;
 }) {
   const steps = payload.steps ?? [];
+  const planned = steps.filter((s) => !s.added);
+  const added = steps.filter((s) => s.added);
   const [on, setOn] = useState<Record<string, boolean>>(() =>
     Object.fromEntries(steps.map((s) => [s.id, !!s.done])),
   );
   const doneCount = steps.filter((s) => on[s.id]).length;
+
+  function row(s: StepItem) {
+    const checked = !!on[s.id];
+    return (
+      <li key={s.id}>
+        <button
+          type="button"
+          aria-pressed={checked}
+          onClick={() => setOn((prev) => ({ ...prev, [s.id]: !prev[s.id] }))}
+          className="flex w-full items-center gap-2 rounded-2xl bg-[#1c1c21] px-3 py-3 text-left ring-1 ring-white/5"
+        >
+          <span
+            className="inline-block h-4 w-4 shrink-0 rounded-[3px]"
+            style={{
+              background: checked ? TONE.teal : "transparent",
+              boxShadow: `inset 0 0 0 1px ${checked ? TONE.teal : "rgba(94,234,212,0.5)"}`,
+            }}
+          />
+          <span
+            className={[
+              "min-w-0 flex-1 text-[13px] leading-snug",
+              checked ? "" : "text-[#9aa0a6]",
+            ].join(" ")}
+          >
+            {s.label}
+          </span>
+        </button>
+      </li>
+    );
+  }
 
   return (
     <Shell>
@@ -673,52 +781,30 @@ function ConfirmSession({
           {payload.duration}
         </p>
       ) : null}
-      <ul className="mt-4 space-y-2">
-        {steps.map((s) => {
-          const checked = !!on[s.id];
-          return (
-            <li key={s.id}>
-              <button
-                type="button"
-                aria-pressed={checked}
-                onClick={() =>
-                  setOn((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
-                }
-                className="flex w-full items-center gap-2 rounded-2xl bg-[#1c1c21] px-3 py-3 text-left ring-1 ring-white/5"
-              >
-                <span
-                  className="inline-block h-4 w-4 shrink-0 rounded-[3px]"
-                  style={{
-                    background: checked ? TONE.teal : "transparent",
-                    boxShadow: `inset 0 0 0 1px ${checked ? TONE.teal : "rgba(94,234,212,0.5)"}`,
-                  }}
-                />
-                <span
-                  className={[
-                    "min-w-0 flex-1 text-[13px] leading-snug",
-                    checked ? "" : "text-[#9aa0a6]",
-                  ].join(" ")}
-                >
-                  {s.label}
-                </span>
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <ul className="mt-4 space-y-2">{planned.map(row)}</ul>
+      {added.length > 0 ? (
+        <>
+          <p className="mt-4 text-[11px] uppercase tracking-[0.16em] text-[#9aa0a6]">
+            Added in session
+          </p>
+          <ul className="mt-2 space-y-2">{added.map(row)}</ul>
+        </>
+      ) : null}
       <p className="mt-3 text-center font-[family-name:var(--font-display)] text-[32px] leading-none tabular-nums text-[#5eead4]">
         +{doneCount}
       </p>
       <p className="mt-1 text-center text-[12px] text-[#9aa0a6]">squares</p>
-      {primary ? (
-        <button
-          type="button"
-          onClick={() => onChoice(primary)}
-          className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
-        >
-          {primary.label}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={() => {
+          const leftover = added.some((s) => !on[s.id]);
+          if (leftover && payload.afterScene) onGo(payload.afterScene);
+          else if (primary) onChoice(primary);
+        }}
+        className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
+      >
+        {primary?.label ?? "Confirm"}
+      </button>
     </Shell>
   );
 }
@@ -730,10 +816,10 @@ function FocusMode({
   payload: SquaresPayload;
   onFinish: () => void;
 }) {
+  const extras = ["Check breakpoints", "Fix nav wrap"];
   const [steps, setSteps] = useState<StepItem[]>(() => payload.steps ?? []);
   const [filled, setFilled] = useState<Record<string, boolean>>({});
-  const filledCount = steps.filter((s) => filled[s.id]).length;
-  const remaining = steps.length - filledCount;
+  const extraIdx = steps.filter((s) => s.added).length;
 
   return (
     <Shell>
@@ -745,80 +831,193 @@ function FocusMode({
           {payload.goalName}
         </p>
       </div>
-      <p className="mt-3 text-center font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums tracking-tight">
+      <button
+        type="button"
+        aria-label="Timer done"
+        onClick={onFinish}
+        className="mt-3 w-full text-center font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums tracking-tight"
+      >
         {payload.timer}
-      </p>
+      </button>
       <ul className="mt-3 space-y-1.5">
         {steps.map((s) => {
           const on = !!filled[s.id];
           return (
             <li
               key={s.id}
-              className="rounded-xl bg-[#1c1c21] ring-1 ring-white/5"
+              className={[
+                "rounded-xl bg-[#1c1c21] ring-1",
+                s.added ? "ring-[#5eead4]/35" : "ring-white/5",
+              ].join(" ")}
             >
               <div className="flex items-center gap-2 px-2.5 py-2">
                 <button
                   type="button"
-                  onClick={() =>
-                    setFilled((prev) => ({ ...prev, [s.id]: true }))
-                  }
-                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
                   aria-label={s.label}
+                  onClick={() =>
+                    setFilled((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                  }
+                  className="shrink-0"
                 >
                   <span
-                    className="inline-block h-4 w-4 shrink-0 rounded-[3px] transition-colors"
+                    className="inline-block h-4 w-4 rounded-[3px] transition-colors"
                     style={{ background: on ? TONE.teal : "#2a2a32" }}
                   />
-                  <span
-                    className={[
-                      "min-w-0 text-[13px] leading-snug",
-                      on ? "text-[#9aa0a6] line-through" : "",
-                    ].join(" ")}
-                  >
-                    {s.label}
-                  </span>
                 </button>
-                {s.tooBig && !on ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const next = s.splitInto ?? [];
-                      if (next.length === 0) return;
-                      setSteps((prev) =>
-                        prev.flatMap((row) => (row.id === s.id ? next : [row])),
-                      );
-                      setFilled((prev) => {
-                        const copy = { ...prev };
-                        delete copy[s.id];
-                        return copy;
-                      });
-                    }}
-                    className="shrink-0 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-[#fbbf24] ring-1 ring-[#fbbf24]/40"
-                  >
-                    Split
-                  </button>
-                ) : null}
+                <input
+                  value={s.label}
+                  aria-label={`Rename ${s.label}`}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    setSteps((prev) =>
+                      prev.map((row) =>
+                        row.id === s.id ? { ...row, label: v } : row,
+                      ),
+                    );
+                  }}
+                  className={[
+                    "min-w-0 flex-1 bg-transparent text-[13px] leading-snug outline-none",
+                    on ? "text-[#9aa0a6] line-through" : "",
+                  ].join(" ")}
+                />
               </div>
             </li>
           );
         })}
       </ul>
-      <p className="mt-2 text-center text-[11px] tabular-nums text-[#9aa0a6]">
-        {filledCount}/{steps.length}
-        {remaining > 0 ? ` · ${remaining} open` : " · session squares done"}
-      </p>
+      {extraIdx < extras.length ? (
+        <button
+          type="button"
+          onClick={() => {
+            const label = extras[extraIdx];
+            setSteps((prev) => [
+              ...prev,
+              { id: `add-${extraIdx}`, label, added: true },
+            ]);
+          }}
+          className="mt-1 w-full px-2.5 py-2.5 text-left text-[13px] text-[#6b7280]"
+        >
+          List item
+        </button>
+      ) : (
+        <p className="mt-1 px-2.5 py-2.5 text-[13px] text-[#6b7280]">List item</p>
+      )}
       <button
         type="button"
         onClick={onFinish}
-        className={[
-          "mt-3 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
-          filledCount > 0
-            ? "bg-[#5eead4] text-[#042f2e]"
-            : "bg-[#1c1c21] text-[#9aa0a6] ring-1 ring-white/10",
-        ].join(" ")}
+        className="mt-3 w-full rounded-xl bg-[#1c1c21] py-2.5 text-[13px] font-semibold text-[#ececec] ring-1 ring-white/10 active:scale-[0.98]"
       >
-        End session
+        End early
       </button>
+    </Shell>
+  );
+}
+
+function AfterTree({
+  payload,
+  onHome,
+  onGoal,
+}: {
+  payload: SquaresPayload;
+  onHome?: () => void;
+  onGoal?: () => void;
+}) {
+  const [items, setItems] = useState<OutlineItem[]>(() => payload.outline ?? []);
+  const [show, setShow] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setShow(true), 40);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  function move(index: number, dir: -1 | 1) {
+    const next = index + dir;
+    if (next < 0 || next >= items.length) return;
+    const copy = [...items];
+    const [row] = copy.splice(index, 1);
+    copy.splice(next, 0, row);
+    setItems(copy);
+  }
+
+  return (
+    <Shell>
+      <p className="pt-1 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
+        After session
+      </p>
+      <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
+        {payload.goalName}
+      </p>
+      <p className="mt-1 text-[11px] text-[#9aa0a6]">Tree updated</p>
+      <ul className="mt-3">
+        {items.map((s, i) => (
+          <li
+            key={s.id}
+            className={[
+              "border-b border-white/5 transition duration-500",
+              s.added
+                ? show
+                  ? "translate-y-0 opacity-100"
+                  : "translate-y-2 opacity-0"
+                : "",
+            ].join(" ")}
+          >
+            <div
+              className="flex items-center gap-2 py-2"
+              style={{ paddingLeft: 8 + s.depth * 16 }}
+            >
+              <span
+                className="inline-block h-4 w-4 shrink-0 rounded-[3px]"
+                style={{
+                  background: s.done ? TONE.teal : "transparent",
+                  boxShadow: `inset 0 0 0 1px ${s.done ? TONE.teal : "rgba(94,234,212,0.5)"}`,
+                }}
+              />
+              <span
+                className={[
+                  "min-w-0 flex-1 text-[13px] leading-snug",
+                  s.done ? "text-[#6b7280] line-through" : "",
+                  s.added && !s.done ? "text-[#5eead4]" : "",
+                ].join(" ")}
+              >
+                {s.label}
+              </span>
+              <button
+                type="button"
+                aria-label={`Move ${s.label} up`}
+                onClick={() => move(i, -1)}
+                className="px-1 text-[11px] text-[#6b7280]"
+              >
+                ↑
+              </button>
+              <button
+                type="button"
+                aria-label={`Move ${s.label} down`}
+                onClick={() => move(i, 1)}
+                className="px-1 text-[11px] text-[#6b7280]"
+              >
+                ↓
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+      {onGoal ? (
+        <button
+          type="button"
+          onClick={onGoal}
+          className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
+        >
+          Start session
+        </button>
+      ) : null}
+      {onHome ? (
+        <button
+          type="button"
+          onClick={onHome}
+          className="mt-2 w-full rounded-xl py-2.5 text-[13px] text-[#9aa0a6] ring-1 ring-white/10"
+        >
+          Home
+        </button>
+      ) : null}
     </Shell>
   );
 }
