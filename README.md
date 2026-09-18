@@ -10,6 +10,7 @@ Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 36
 |---|---|---|
 | Legal 360 | `/legal-360` | [as-is](./cases/legal-360/docs/flows/client-redline-as-is.md), [auto Slack](./cases/legal-360/docs/flows/client-redline-auto-slack.md) |
 | Device Monitor | `/device-monitor` | [booth fleet](./cases/device-monitor/docs/flows/booth-fleet.md) |
+| Device Monitor · Play | `/device-monitor-play` | [play grid](./cases/device-monitor-play/docs/flows/play-grid.md) |
 
 ## Add a case
 

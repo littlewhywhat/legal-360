@@ -8,4 +8,4 @@
 6. Add `@cases/<id>` to `apps/web/package.json` + `transpilePackages` in `next.config.ts`.
 7. `pnpm install` from repo root, then `pnpm --filter web dev`.
 
-Engine owns skins (`email` / `slack` / `docs` / `system` / `devices`) and `DemoPlayer`. Case owns only script + copy. New UI skin → extend `apps/web/components/demo/`, not a new app.
+Engine owns skins (`email` / `slack` / `docs` / `system` / `devices` / `devices-play`) and `DemoPlayer`. Case owns only script + copy. New UI skin → extend `apps/web/components/demo/`, not a new app.

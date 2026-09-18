@@ -1,5 +1,5 @@
 export type Device = "client" | "supervisor" | "system" | "ops";
-export type AppSkin = "email" | "slack" | "docs" | "system" | "devices";
+export type AppSkin = "email" | "slack" | "docs" | "system" | "devices" | "devices-play";
 
 export type Choice = {
   id: string;
@@ -25,6 +25,7 @@ export type CaseMeta = {
   id: string;
   title: string;
   tagline: string;
+  hideSteps?: boolean;
 };
 
 export type DemoCase = {
