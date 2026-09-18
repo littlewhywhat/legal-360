@@ -6,7 +6,6 @@ const goalsBefore = [
   {
     id: "launch",
     name: "Launch my side project",
-    task: "Build landing page",
     done: 11,
     total: 24,
     tone: "teal",
@@ -15,7 +14,6 @@ const goalsBefore = [
   {
     id: "spanish",
     name: "Learn Spanish",
-    task: "Vocab",
     done: 6,
     total: 8,
     tone: "violet",
@@ -23,7 +21,6 @@ const goalsBefore = [
   {
     id: "fit",
     name: "Get fit",
-    task: "Walk",
     done: 5,
     total: 8,
     tone: "amber",
@@ -34,15 +31,13 @@ const goalsAfter = [
   {
     id: "launch",
     name: "Launch my side project",
-    task: "Build landing page",
-    done: 15,
+    done: 13,
     total: 24,
     tone: "teal",
   },
   {
     id: "spanish",
     name: "Learn Spanish",
-    task: "Vocab",
     done: 6,
     total: 8,
     tone: "violet",
@@ -50,7 +45,6 @@ const goalsAfter = [
   {
     id: "fit",
     name: "Get fit",
-    task: "Walk",
     done: 5,
     total: 8,
     tone: "amber",
@@ -88,7 +82,6 @@ const wedDetail = {
   groups: [
     {
       goal: "Launch my side project",
-      task: "Build landing page",
       tone: "teal" as const,
       items: [
         "Write hero copy",
@@ -99,13 +92,11 @@ const wedDetail = {
     },
     {
       goal: "Learn Spanish",
-      task: "Vocab",
       tone: "violet" as const,
       items: ["Review 5 cards", "Say 3 sentences out loud"],
     },
     {
       goal: "Get fit",
-      task: "Walk",
       tone: "amber" as const,
       items: ["10-minute walk"],
     },
@@ -153,8 +144,8 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "squares",
-    title: "Tasks",
-    hint: "Tap a task to start — or the week strip for History",
+    title: "Goals",
+    hint: "Tap a goal to start — or the week strip for History",
     payload: {
       mode: "home",
       weekCount: 12,
@@ -170,14 +161,13 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Choose squares",
-    hint: "Check the squares for this session. Too big? Split in Focus.",
+    hint: "Check the squares for this session.",
     choices: [
       { id: "ready", label: "Continue", next: "s3-ready", variant: "primary" },
     ],
     payload: {
       mode: "pick-steps",
       goalName: "Launch my side project",
-      taskName: "Build landing page",
       steps: landingSteps,
     },
   },
@@ -196,7 +186,6 @@ export const scenes: Scene[] = [
       mode: "ready",
       timer: "20:00",
       goalName: "Launch my side project",
-      taskName: "Build landing page",
       steps: landingSteps,
     },
   },
@@ -207,12 +196,11 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Focus",
-    hint: "Split the oversized step. Fill any remaining square — any order.",
+    hint: "Fill squares in any order. End session when you want.",
     payload: {
       mode: "focus",
       timer: "20:00",
       goalName: "Launch my side project",
-      taskName: "Build landing page",
       steps: landingSteps,
       finishTo: "s5-summary",
     },
@@ -223,23 +211,19 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "squares",
-    title: "You moved forward",
-    hint: "Split turned one square into two. No streak.",
+    title: "Confirm",
+    hint: "Confirm what you finished. Not every square.",
     choices: [
-      { id: "done", label: "Finish for now", next: "s6-home-after", variant: "primary" },
+      { id: "done", label: "Confirm", next: "s6-home-after", variant: "primary" },
     ],
     payload: {
       mode: "summary",
-      added: 4,
       duration: "20 min",
-      progressBefore: "46%",
-      progressAfter: "62%",
       goalName: "Launch my side project",
-      completed: [
-        "Write hero copy",
-        "Add CTA",
-        "Check breakpoints",
-        "Fix nav wrap",
+      steps: [
+        { id: "hero", label: "Write hero copy", done: true },
+        { id: "cta", label: "Add CTA", done: true },
+        { id: "mobile", label: "Fix mobile layout", done: false },
       ],
     },
   },
@@ -249,11 +233,11 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "client",
     app: "squares",
-    title: "Tasks",
-    hint: "Same task — more squares filled. Tap the week strip.",
+    title: "Goals",
+    hint: "Same goal — more squares filled. Tap the week strip.",
     payload: {
       mode: "home",
-      weekCount: 16,
+      weekCount: 14,
       goals: goalsAfter,
       last7,
       historyScene: "s7-history",

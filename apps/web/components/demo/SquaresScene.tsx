@@ -8,7 +8,6 @@ type Tone = "teal" | "violet" | "amber";
 type GoalCard = {
   id: string;
   name: string;
-  task?: string;
   done: number;
   total: number;
   tone: Tone;
@@ -25,7 +24,6 @@ type StepItem = {
 
 type DayGroup = {
   goal: string;
-  task: string;
   items: string[];
   tone: Tone;
 };
@@ -62,15 +60,10 @@ type SquaresPayload = {
   last7?: CalendarDay[];
   historyScene?: string;
   goalName?: string;
-  taskName?: string;
   steps?: StepItem[];
   timer?: string;
   finishTo?: string;
-  added?: number;
   duration?: string;
-  progressBefore?: string;
-  progressAfter?: string;
-  completed?: string[];
   calendarWeeks?: CalendarWeek[];
   homeScene?: string;
   insightsScene?: string;
@@ -287,16 +280,11 @@ export function SquaresScene({
             const body = (
               <>
                 <div className="flex items-baseline justify-between gap-2">
-                  <p className="text-[13px] font-medium leading-snug">
-                    {g.task ?? g.name}
-                  </p>
+                  <p className="text-[13px] font-medium leading-snug">{g.name}</p>
                   <p className="shrink-0 text-[10px] tabular-nums text-[#9aa0a6]">
                     {g.done}/{g.total}
                   </p>
                 </div>
-                {g.task ? (
-                  <p className="mt-0.5 text-[11px] text-[#9aa0a6]">{g.name}</p>
-                ) : null}
                 <div className="mt-2">
                   <SquareGrid
                     done={g.done}
@@ -355,46 +343,7 @@ export function SquaresScene({
 
   if (payload.mode === "summary") {
     return (
-      <Shell>
-        <p className="pt-2 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
-          Session
-        </p>
-        <p className="mt-2 text-[22px] font-semibold tracking-tight">
-          You moved forward
-        </p>
-        <p className="mt-3 font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums text-[#5eead4]">
-          +{payload.added}
-        </p>
-        <p className="mt-1 text-[12px] text-[#9aa0a6]">squares</p>
-        <div className="mt-4 rounded-2xl bg-[#1c1c21] px-3 py-3 text-[12px] ring-1 ring-white/5">
-          <p className="font-medium">{payload.goalName}</p>
-          <p className="mt-1 tabular-nums text-[#9aa0a6]">
-            {payload.progressBefore} → {payload.progressAfter}
-            <span className="mx-1.5">·</span>
-            {payload.duration}
-          </p>
-          <ul className="mt-3 space-y-1.5 text-[#ececec]">
-            {payload.completed?.map((line) => (
-              <li key={line} className="flex items-center gap-2">
-                <span
-                  className="inline-block h-2.5 w-2.5 rounded-[2px]"
-                  style={{ background: TONE.teal }}
-                />
-                {line}
-              </li>
-            ))}
-          </ul>
-        </div>
-        {primary ? (
-          <button
-            type="button"
-            onClick={() => onChoice(primary)}
-            className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
-          >
-            {primary.label}
-          </button>
-        ) : null}
-      </Shell>
+      <ConfirmSession payload={payload} primary={primary} onChoice={onChoice} />
     );
   }
 
@@ -473,9 +422,8 @@ function PickSteps({
       <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
         Choose squares
       </p>
-      <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.taskName}</p>
       {payload.goalName ? (
-        <p className="text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
+        <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
       ) : null}
       <ul className="mt-4 space-y-2">
         {steps.map((s) => {
@@ -500,11 +448,6 @@ function PickSteps({
                 <span className="min-w-0 flex-1 text-[13px] leading-snug">
                   {s.label}
                 </span>
-                {s.tooBig ? (
-                  <span className="shrink-0 text-[10px] uppercase tracking-wide text-[#fbbf24]">
-                    Too big
-                  </span>
-                ) : null}
               </button>
             </li>
           );
@@ -548,18 +491,10 @@ function ReadyTimer({
         Ready
       </p>
       <p className="mt-2 text-center text-[13px] font-medium">
-        {payload.taskName}
+        {payload.goalName}
       </p>
-      {payload.goalName ? (
-        <p className="text-center text-[11px] text-[#9aa0a6]">
-          {payload.goalName}
-        </p>
-      ) : null}
       <p className="mt-8 text-center font-[family-name:var(--font-display)] text-[48px] leading-none tabular-nums tracking-tight">
         {payload.timer}
-      </p>
-      <p className="mt-2 text-center text-[11px] text-[#9aa0a6]">
-        Pomodoro · timer ≠ a square
       </p>
       <ul className="mt-6 space-y-1.5">
         {steps.map((s) => (
@@ -569,6 +504,87 @@ function ReadyTimer({
           </li>
         ))}
       </ul>
+      {primary ? (
+        <button
+          type="button"
+          onClick={() => onChoice(primary)}
+          className="mt-4 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
+        >
+          {primary.label}
+        </button>
+      ) : null}
+    </Shell>
+  );
+}
+
+function ConfirmSession({
+  payload,
+  primary,
+  onChoice,
+}: {
+  payload: SquaresPayload;
+  primary?: Choice;
+  onChoice: (choice: Choice) => void;
+}) {
+  const steps = payload.steps ?? [];
+  const [on, setOn] = useState<Record<string, boolean>>(() =>
+    Object.fromEntries(steps.map((s) => [s.id, !!s.done])),
+  );
+  const doneCount = steps.filter((s) => on[s.id]).length;
+
+  return (
+    <Shell>
+      <p className="pt-2 text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
+        Session
+      </p>
+      <p className="mt-2 text-[22px] font-semibold tracking-tight">
+        What did you finish?
+      </p>
+      {payload.goalName ? (
+        <p className="mt-1 text-[11px] text-[#9aa0a6]">{payload.goalName}</p>
+      ) : null}
+      {payload.duration ? (
+        <p className="text-[11px] tabular-nums text-[#9aa0a6]">
+          {payload.duration}
+        </p>
+      ) : null}
+      <ul className="mt-4 space-y-2">
+        {steps.map((s) => {
+          const checked = !!on[s.id];
+          return (
+            <li key={s.id}>
+              <button
+                type="button"
+                aria-pressed={checked}
+                onClick={() =>
+                  setOn((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                }
+                className="flex w-full items-center gap-2 rounded-2xl bg-[#1c1c21] px-3 py-3 text-left ring-1 ring-white/5"
+              >
+                <span
+                  className="inline-block h-4 w-4 shrink-0 rounded-[3px]"
+                  style={{
+                    background: checked ? TONE.teal : "transparent",
+                    boxShadow: `inset 0 0 0 1px ${checked ? TONE.teal : "rgba(94,234,212,0.5)"}`,
+                  }}
+                />
+                <span
+                  className={[
+                    "min-w-0 flex-1 text-[13px] leading-snug",
+                    checked ? "" : "text-[#9aa0a6]",
+                  ].join(" ")}
+                >
+                  {s.label}
+                </span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <p className="mt-3 text-center font-[family-name:var(--font-display)] text-[32px] leading-none tabular-nums text-[#5eead4]">
+        +{doneCount}
+      </p>
+      <p className="mt-1 text-center text-[12px] text-[#9aa0a6]">squares</p>
       {primary ? (
         <button
           type="button"
@@ -601,14 +617,11 @@ function FocusMode({
           Focus
         </p>
         <p className="truncate pl-2 text-[11px] text-[#9aa0a6]">
-          {payload.taskName}
+          {payload.goalName}
         </p>
       </div>
       <p className="mt-3 text-center font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums tracking-tight">
         {payload.timer}
-      </p>
-      <p className="mt-1.5 text-center text-[11px] text-[#9aa0a6]">
-        Any order · timer ≠ a square
       </p>
       <ul className="mt-3 space-y-1.5">
         {steps.map((s) => {
@@ -723,13 +736,11 @@ function HistoryView({
           <div className="mt-3 space-y-2.5">
             {groups.map((g) => (
               <div
-                key={`${g.goal}-${g.task}`}
+                key={g.goal}
                 className="rounded-2xl bg-[#1c1c21] px-3 py-3 ring-1 ring-white/5"
               >
                 <p className="text-[11px] text-[#9aa0a6]">
                   {g.goal}
-                  <span className="mx-1">·</span>
-                  {g.task}
                   <span className="mx-1">·</span>
                   {g.items.length}
                 </p>
