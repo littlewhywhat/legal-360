@@ -1,21 +1,8 @@
 import type { Metadata } from "next";
-import { Fraunces, Manrope, Source_Serif_4 } from "next/font/google";
+import "@fontsource-variable/manrope/wght.css";
+import "@fontsource-variable/fraunces/wght.css";
+import "@fontsource-variable/source-serif-4/wght.css";
 import "./globals.css";
-
-const manrope = Manrope({
-  variable: "--font-sans-demo",
-  subsets: ["latin"],
-});
-
-const fraunces = Fraunces({
-  variable: "--font-display",
-  subsets: ["latin"],
-});
-
-const sourceSerif = Source_Serif_4({
-  variable: "--font-doc",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Demo cases",
@@ -24,10 +11,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${manrope.variable} ${fraunces.variable} ${sourceSerif.variable} h-full antialiased`}
-    >
+    <html lang="en" className="h-full antialiased">
       <body className="min-h-full flex flex-col font-[family-name:var(--font-sans-demo)]">
         {children}
       </body>

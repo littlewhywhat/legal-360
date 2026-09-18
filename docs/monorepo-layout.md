@@ -8,7 +8,7 @@ Polyglot setup: JS and Python side by side. Demo cases share one Next shell + `@
 apps/web/              Next.js shell — catalog + /[case] player (pnpm)
 apps/api/              Python API — FastAPI + uv (later)
 packages/demo-runtime/ Scene / Choice / buildCase types
-cases/<id>/            Case meta + demo-script + docs/flows
+cases/<id>/            Case meta + demo-script + docs/flows (`legal-360`, `device-monitor`)
 docs/                  How to add a case; monorepo notes
 ```
 
