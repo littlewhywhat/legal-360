@@ -7,6 +7,7 @@ type PhoneFrameProps = {
   children: ReactNode;
   chrome?: "light" | "dark" | "overlay";
   clock?: string;
+  onBack?: () => void;
 };
 
 export function PhoneFrame({
@@ -14,9 +15,11 @@ export function PhoneFrame({
   children,
   chrome = "light",
   clock = "9:41",
+  onBack,
 }: PhoneFrameProps) {
   const overlay = chrome === "overlay";
   const dark = chrome === "dark" || overlay;
+  const bar = dark ? "text-[#9aa89f]" : "text-[var(--screen-muted)]";
   return (
     <div className="flex w-full max-w-[320px] flex-col items-center gap-3">
       <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--stage-muted)]">
@@ -39,9 +42,7 @@ export function PhoneFrame({
               "flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-medium",
               overlay
                 ? "pointer-events-none absolute inset-x-0 top-0 z-10 text-white"
-                : "shrink-0",
-              !overlay && dark ? "text-[#9aa89f]" : "",
-              !overlay && !dark ? "text-[var(--screen-muted)]" : "",
+                : `shrink-0 ${bar}`,
             ].join(" ")}
           >
             <span>{clock}</span>
@@ -52,6 +53,27 @@ export function PhoneFrame({
           </div>
           <div className="min-h-0 w-full min-w-0 flex-1 overflow-hidden">
             {children}
+          </div>
+          <div
+            className={[
+              "flex h-7 shrink-0 items-center px-2",
+              overlay ? "absolute inset-x-0 bottom-0 z-10 text-white" : bar,
+            ].join(" ")}
+          >
+            {onBack ? (
+              <button
+                type="button"
+                onClick={onBack}
+                aria-label="Back"
+                className="flex h-7 w-8 items-center justify-center text-[22px] leading-none"
+              >
+                ‹
+              </button>
+            ) : (
+              <span className="w-8" />
+            )}
+            <span className="mx-auto h-1 w-[108px] rounded-full bg-current opacity-30" />
+            <span className="w-8" />
           </div>
         </div>
       </div>

@@ -217,12 +217,14 @@ export function AuroraScene({
   onChoice,
   onAdvance,
   onGo,
+  onBack,
 }: {
   payload: AuroraPayload;
   choices?: Choice[];
   onChoice: (choice: Choice) => void;
   onAdvance?: () => void;
   onGo?: (id: string) => void;
+  onBack?: () => void;
 }) {
   if (payload.mode === "lock" && payload.place) {
     const p = pSee(payload.place);
@@ -245,19 +247,11 @@ export function AuroraScene({
           }}
         />
         <div className="absolute inset-x-0 bottom-0 h-[22%] bg-gradient-to-t from-black/70 to-transparent" />
-        <div className="relative flex h-full flex-col px-3 pb-3 pt-9">
-          <div className="grid grid-cols-4 gap-x-3 gap-y-3 px-1 pt-2">
-            {ICONS.map((icon) => (
-              <div key={icon.label} className="flex flex-col items-center gap-1">
-                <span className="h-10 w-10 rounded-[0.85rem] shadow-sm" style={{ background: icon.bg }} />
-                <span className="text-[8px] text-white/90">{icon.label}</span>
-              </div>
-            ))}
-          </div>
+        <div className="relative flex h-full flex-col px-3 pb-8 pt-8">
           <button
             type="button"
             onClick={onAdvance}
-            className="mx-1 mt-3 rounded-[1.2rem] bg-white/18 px-3 py-2.5 text-left ring-1 ring-white/25 backdrop-blur-md"
+            className="animate-banner-in w-full rounded-[1.15rem] bg-white/22 px-3 py-2.5 text-left shadow-[0_8px_24px_rgba(0,0,0,0.28)] ring-1 ring-white/30 backdrop-blur-md"
           >
             <div className="flex items-start gap-2.5">
               <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-[0.7rem] bg-[#6ee7b7] text-[11px] font-bold text-[#052e1c]">
@@ -275,6 +269,14 @@ export function AuroraScene({
               </div>
             </div>
           </button>
+          <div className="mt-4 grid grid-cols-4 gap-x-3 gap-y-3 px-1">
+            {ICONS.map((icon) => (
+              <div key={icon.label} className="flex flex-col items-center gap-1">
+                <span className="h-10 w-10 rounded-[0.85rem] shadow-sm" style={{ background: icon.bg }} />
+                <span className="text-[8px] text-white/90">{icon.label}</span>
+              </div>
+            ))}
+          </div>
           <div className="mt-auto flex justify-center gap-3 rounded-[1.4rem] bg-black/25 px-3 py-2.5 backdrop-blur">
             {DOCK.map((icon) => (
               <span key={icon.label} className="h-10 w-10 rounded-[0.85rem]" style={{ background: icon.bg }} />
@@ -410,7 +412,7 @@ export function AuroraScene({
     const clear = 100 - src.cloud;
     return (
       <div className="flex h-full w-full flex-col bg-[#121816] px-3 pb-3 pt-2">
-        <button type="button" onClick={onAdvance} className="self-start text-[12px] text-[#9fe1c3]">
+        <button type="button" onClick={onBack ?? onAdvance} className="self-start text-[12px] text-[#9fe1c3]">
           ← {payload.place.name}
         </button>
         <div className="mt-2 flex items-end justify-between">

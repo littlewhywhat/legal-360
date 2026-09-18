@@ -8,4 +8,4 @@
 6. Add `@cases/<id>` to `apps/web/package.json` + `transpilePackages` in `next.config.ts`.
 7. `pnpm install` from repo root, then `pnpm --filter web dev`.
 
-Engine owns skins (`email` / `slack` / `docs` / `system` / `aurora`) and `DemoPlayer`. Case owns only script + copy. New UI skin → extend `apps/web/components/demo/`, not a new app.
+Engine owns skins (`email` / `slack` / `docs` / `system` / `aurora`) and `DemoPlayer`. Phone chrome has a ‹ back control (scene stack) on every case. Case owns only script + copy. New UI skin → extend `apps/web/components/demo/`, not a new app.

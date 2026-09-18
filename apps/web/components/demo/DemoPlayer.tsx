@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Choice, DemoCase, Scene } from "@demo/runtime";
 import { PhoneFrame } from "./PhoneFrame";
@@ -34,16 +34,43 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const sceneId =
     paramScene && sceneById[paramScene] ? paramScene : firstSceneId;
   const scene = sceneById[sceneId];
+  const stackRef = useRef<string[]>([sceneId]);
+  const [canBack, setCanBack] = useState(false);
 
-  const go = useCallback(
+  const navigate = useCallback(
     (nextId: string) => {
-      if (!sceneById[nextId]) return;
       const params = new URLSearchParams(searchParams.toString());
       params.set("s", nextId);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, sceneById, searchParams],
+    [pathname, router, searchParams],
   );
+
+  const go = useCallback(
+    (nextId: string) => {
+      if (!sceneById[nextId]) return;
+      if (nextId === firstSceneId) {
+        stackRef.current = [firstSceneId];
+        setCanBack(false);
+        navigate(nextId);
+        return;
+      }
+      const top = stackRef.current[stackRef.current.length - 1];
+      if (nextId !== top) {
+        stackRef.current = [...stackRef.current, nextId];
+        setCanBack(stackRef.current.length > 1);
+      }
+      navigate(nextId);
+    },
+    [firstSceneId, navigate, sceneById],
+  );
+
+  const back = useCallback(() => {
+    if (stackRef.current.length < 2) return;
+    stackRef.current = stackRef.current.slice(0, -1);
+    setCanBack(stackRef.current.length > 1);
+    navigate(stackRef.current[stackRef.current.length - 1]);
+  }, [navigate]);
 
   const advance = useCallback(() => {
     if (scene.next) go(scene.next);
@@ -58,6 +85,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" || e.key === "Backspace") {
+        if (stackRef.current.length > 1) {
+          e.preventDefault();
+          back();
+        }
+      }
       if (e.key === "ArrowRight" || e.key === " ") {
         const hasBlockingChoices =
           !!scene.choices &&
@@ -75,7 +108,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, firstSceneId, go, scene]);
+  }, [advance, back, firstSceneId, go, scene]);
 
   const primaryChoice = useMemo(
     () => scene.choices?.find((c) => c.variant === "primary"),
@@ -96,6 +129,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             : "light"
         }
         clock={scene.app === "aurora" ? "21:14" : "9:41"}
+        onBack={canBack ? back : undefined}
       >
         {scene.app === "email" ? (
           <EmailScene
@@ -127,11 +161,13 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         ) : null}
         {scene.app === "aurora" ? (
           <AuroraScene
+            key={scene.id}
             payload={scene.payload as never}
             choices={scene.choices}
             onChoice={onChoice}
             onAdvance={scene.next ? advance : undefined}
             onGo={go}
+            onBack={canBack ? back : undefined}
           />
         ) : null}
       </PhoneFrame>
@@ -149,7 +185,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
           Reset
         </button>
         <span aria-hidden>·</span>
-        <span>Tap through · Home resets</span>
+        <span>Tap through · ‹ back · Home resets</span>
       </div>
     </div>
   );
