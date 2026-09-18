@@ -182,7 +182,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
           disabled={!canBack}
           className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-fg)] disabled:cursor-default disabled:opacity-30"
         >
-          ‹ Back
+          Back
         </button>
         <button
           type="button"
