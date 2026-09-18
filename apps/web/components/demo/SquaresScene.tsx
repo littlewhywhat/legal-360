@@ -62,8 +62,7 @@ type SquaresPayload = {
     | "ready"
     | "focus"
     | "summary"
-    | "history"
-    | "insights";
+    | "history";
   weekCount?: number;
   goals?: GoalCard[];
   last7?: CalendarDay[];
@@ -77,8 +76,6 @@ type SquaresPayload = {
   animateAdded?: boolean;
   calendarWeeks?: CalendarWeek[];
   homeScene?: string;
-  insightsScene?: string;
-  lines?: string[];
 };
 
 const TONE: Record<Tone, string> = {
@@ -138,13 +135,19 @@ function GhCell({
   label,
   onClick,
   size = "sm",
+  fill = false,
 }: {
   count: number;
   label: string;
   onClick?: () => void;
   size?: "sm" | "md";
+  fill?: boolean;
 }) {
-  const box = size === "md" ? "h-4 w-4 rounded-[3px]" : "h-3 w-3 rounded-[2px]";
+  const box = fill
+    ? "w-full aspect-square min-h-0 min-w-0 rounded-[2px]"
+    : size === "md"
+      ? "h-4 w-4 rounded-[3px]"
+      : "h-3 w-3 rounded-[2px]";
   const cls = `${box} ${onClick ? "" : "pointer-events-none"}`;
   const style = { background: GH[ghLevel(count)] };
   if (!onClick) {
@@ -219,7 +222,6 @@ export function SquaresScene({
   payload,
   choices,
   onChoice,
-  onAdvance,
   onGo,
 }: {
   payload: SquaresPayload;
@@ -280,45 +282,7 @@ export function SquaresScene({
       <HistoryView
         payload={payload}
         onHome={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
-        onInsights={
-          payload.insightsScene
-            ? () => onGo(payload.insightsScene!)
-            : undefined
-        }
       />
-    );
-  }
-
-  if (payload.mode === "insights") {
-    return (
-      <Shell>
-        <BackToGoals
-          onClick={
-            payload.homeScene ? () => onGo(payload.homeScene!) : undefined
-          }
-        />
-        <p className="mt-2 text-[15px] font-semibold tracking-tight">Insights</p>
-        <p className="mt-1 text-[11px] text-[#9aa0a6]">From your squares</p>
-        <div className="mt-3 space-y-2">
-          {payload.lines?.map((line) => (
-            <div
-              key={line}
-              className="rounded-2xl bg-[#1c1c21] px-3 py-3 text-[13px] leading-snug ring-1 ring-white/5"
-            >
-              {line}
-            </div>
-          ))}
-        </div>
-        {onAdvance ? (
-          <button
-            type="button"
-            onClick={onAdvance}
-            className="mt-4 w-full rounded-xl bg-[#1c1c21] py-2.5 text-[13px] font-medium text-[#5eead4] ring-1 ring-[#5eead4]/30"
-          >
-            Replay
-          </button>
-        ) : null}
-      </Shell>
     );
   }
 
@@ -909,17 +873,19 @@ const DAY_ROWS = ["S", "M", "T", "W", "T", "F", "S"];
 function HistoryView({
   payload,
   onHome,
-  onInsights,
 }: {
   payload: SquaresPayload;
   onHome?: () => void;
-  onInsights?: () => void;
 }) {
   const [openId, setOpenId] = useState<string | null>(null);
   const weeks = payload.calendarWeeks ?? [];
   const days = weeks.flatMap((w) => w.days);
   const open = days.find((d) => d.id === openId);
   const daysOn = days.filter((d) => d.count > 0).length;
+  const cols = {
+    gridTemplateColumns: `12px repeat(${weeks.length}, minmax(0, 1fr))`,
+    gap: "3px",
+  };
 
   if (open) {
     const groups = open.detail?.groups ?? [];
@@ -983,23 +949,24 @@ function HistoryView({
         {daysOn} days with squares · tap a day
       </p>
       <div className="mt-4 rounded-2xl bg-[#1c1c21] px-3 py-3 ring-1 ring-white/5">
-        <div className="mb-2 flex gap-1.5 pl-5">
+        <div className="mb-2 grid items-end" style={cols}>
+          <span />
           {weeks.map((w, i) => {
             const show = i === 0 || w.month !== weeks[i - 1]?.month;
             return (
               <span
                 key={w.id}
-                className="w-3 text-center text-[8px] text-[#6b7280]"
+                className="overflow-visible whitespace-nowrap text-left text-[8px] leading-none text-[#6b7280]"
               >
                 {show ? w.month : ""}
               </span>
             );
           })}
         </div>
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-[3px]">
           {DAY_ROWS.map((_, rowIdx) => (
-            <div key={rowIdx} className="flex items-center gap-1.5">
-              <span className="w-3.5 text-[8px] text-[#6b7280]">
+            <div key={rowIdx} className="grid items-center" style={cols}>
+              <span className="text-[8px] text-[#6b7280]">
                 {rowIdx === 1 || rowIdx === 3 || rowIdx === 5
                   ? DAY_ROWS[rowIdx]
                   : ""}
@@ -1012,6 +979,7 @@ function HistoryView({
                     count={day.count}
                     label={`${day.name}, ${day.count} squares`}
                     onClick={() => setOpenId(day.id)}
+                    fill
                   />
                 );
               })}
@@ -1030,15 +998,6 @@ function HistoryView({
           More
         </div>
       </div>
-      {onInsights ? (
-        <button
-          type="button"
-          onClick={onInsights}
-          className="mt-3 w-full rounded-xl bg-[#1c1c21] py-2.5 text-[13px] font-medium text-[#5eead4] ring-1 ring-[#5eead4]/30"
-        >
-          Insights
-        </button>
-      ) : null}
     </Shell>
   );
 }

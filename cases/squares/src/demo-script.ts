@@ -163,12 +163,45 @@ function weekDays(
 
 const last7 = weekDays("w37", [0, 3, 4, 7, 2, 3, 0], "w37-wed");
 
+const EMPTY = [0, 0, 0, 0, 0, 0, 0];
+
+function monthWeeks(
+  month: string,
+  weekIds: string[],
+  countsById: Record<string, number[]> = {},
+) {
+  return weekIds.map((id) => ({
+    id,
+    month,
+    days: weekDays(
+      id,
+      countsById[id] ?? EMPTY,
+      id === "w37" ? "w37-wed" : undefined,
+    ),
+  }));
+}
+
 const calendarWeeks = [
-  { id: "w33", month: "Aug", days: weekDays("w33", [0, 1, 0, 2, 1, 0, 0]) },
-  { id: "w34", month: "Aug", days: weekDays("w34", [0, 2, 1, 1, 0, 3, 0]) },
-  { id: "w35", month: "Aug", days: weekDays("w35", [1, 0, 2, 3, 2, 1, 0]) },
-  { id: "w36", month: "Sep", days: weekDays("w36", [0, 1, 3, 2, 4, 2, 1]) },
-  { id: "w37", month: "Sep", days: last7 },
+  ...monthWeeks("May", ["w18", "w19", "w20", "w21", "w22"]),
+  ...monthWeeks("Jun", ["w23", "w24", "w25", "w26"]),
+  ...monthWeeks("Jul", ["w27", "w28", "w29", "w30"]),
+  ...monthWeeks(
+    "Aug",
+    ["w31", "w32", "w33", "w34", "w35"],
+    {
+      w33: [0, 1, 0, 2, 1, 0, 0],
+      w34: [0, 2, 1, 1, 0, 3, 0],
+      w35: [1, 0, 2, 3, 2, 1, 0],
+    },
+  ),
+  ...monthWeeks(
+    "Sep",
+    ["w36", "w37"],
+    {
+      w36: [0, 1, 3, 2, 4, 2, 1],
+      w37: [0, 3, 4, 7, 2, 3, 0],
+    },
+  ),
 ];
 
 export const scenes: Scene[] = [
@@ -314,27 +347,7 @@ export const scenes: Scene[] = [
     payload: {
       mode: "history",
       homeScene: "s7-home-after",
-      insightsScene: "s9-insights",
       calendarWeeks,
-    },
-  },
-  {
-    id: "s9-insights",
-    step: 6,
-    totalSteps: TOTAL_STEPS,
-    device: "client",
-    app: "squares",
-    title: "Insights",
-    hint: "From squares, not a productivity score. Tap to replay.",
-    next: "s1-home",
-    payload: {
-      mode: "insights",
-      homeScene: "s7-home-after",
-      lines: [
-        "You completed 43 squares this week.",
-        "Wednesday was the busiest day — 7 squares.",
-        "Writing is your most frequent action.",
-      ],
     },
   },
 ];
