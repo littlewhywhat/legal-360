@@ -19,23 +19,22 @@ type Place = {
   y?: number;
 };
 
-type Tabs = { list: string; map: string; active: "list" | "map" };
+type Hour = { t: string; cloud: number };
 
 type AuroraPayload = {
-  mode: "lock" | "list" | "detail" | "map" | "finale";
+  mode: "lock" | "brief" | "map" | "finale";
   time?: string;
   date?: string;
   appName?: string;
-  place?: Place | string;
-  p?: number;
-  km?: number;
+  headline?: string;
+  kicker?: string;
   here?: Place;
-  places?: Place[];
-  vsHere?: number;
   spots?: Place[];
+  hourly?: Hour[];
+  best?: Place;
   sheet?: Place;
+  place?: Place;
   eta?: string;
-  tabs?: Tabs;
 };
 
 function pSee(place: Place): number {
@@ -43,9 +42,9 @@ function pSee(place: Place): number {
 }
 
 function tone(p: number): string {
-  if (p >= 50) return "#34d399";
+  if (p >= 50) return "#6ee7b7";
   if (p >= 25) return "#fbbf24";
-  return "#fb7185";
+  return "#f9a8d4";
 }
 
 function Icon({ kind, className }: { kind: Kind; className?: string }) {
@@ -81,176 +80,103 @@ function Icon({ kind, className }: { kind: Kind; className?: string }) {
     );
   }
   return (
-    <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8">
-      <circle cx="12" cy="12" r="3" />
-      <circle cx="12" cy="12" r="8" strokeDasharray="3 3" />
+    <svg viewBox="0 0 24 24" className={common} fill="currentColor">
+      <circle cx="12" cy="12" r="4" />
     </svg>
   );
 }
 
-function CloudIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className ?? "h-3.5 w-3.5"} fill="currentColor">
-      <path d="M7 18h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.5A3.5 3.5 0 0 0 7 18Z" />
-    </svg>
-  );
-}
-
-function StarIcon({ on }: { on?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill={on ? "#34d399" : "none"} stroke={on ? "#34d399" : "#64748b"} strokeWidth="1.8">
-      <path d="m12 4 2.2 5.3L20 10l-4 3.6.9 5.4L12 16.5 7.1 19l.9-5.4L4 10l5.8-.7L12 4Z" />
-    </svg>
-  );
-}
-
-function Ring({ p, size = 88 }: { p: number; size?: number }) {
-  const r = (size - 10) / 2;
-  const c = 2 * Math.PI * r;
-  return (
-    <div className="relative" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="#1e293b" strokeWidth="7" />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={tone(p)}
-          strokeWidth="7"
-          strokeDasharray={`${(p / 100) * c} ${c}`}
-          strokeLinecap="round"
-        />
+function SkyIcon({ cloud }: { cloud: number }) {
+  if (cloud >= 45) {
+    return (
+      <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#cbd5e1]" fill="currentColor">
+        <path d="M7 18h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.5A3.5 3.5 0 0 0 7 18Z" />
       </svg>
-      <div
-        className="absolute inset-0 flex items-center justify-center font-semibold tabular-nums"
-        style={{ color: tone(p), fontSize: size >= 100 ? 22 : size >= 80 ? 18 : 12 }}
-      >
-        {p}
-      </div>
-    </div>
-  );
-}
-
-function Meter({ icon, value, invert }: { icon: "oval" | "cloud" | "dark"; value: number; invert?: boolean }) {
-  const good = invert ? value < 30 : value >= 50;
-  const fill = invert ? Math.max(6, 100 - value) : value;
+    );
+  }
+  if (cloud >= 25) {
+    return (
+      <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#e2e8f0]" fill="currentColor">
+        <path d="M15 5a6 6 0 1 0-1 11.9A4.5 4.5 0 1 0 16 9a5.8 5.8 0 0 0-1-4Z" />
+        <path d="M8 18h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-7.2-2.2A3.2 3.2 0 0 0 8 18Z" opacity=".85" />
+      </svg>
+    );
+  }
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-4 text-[#94a3b8]">
-        {icon === "cloud" ? (
-          <CloudIcon />
-        ) : icon === "dark" ? (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="currentColor">
-            <path d="M15 3a9 9 0 1 0 6 15 8 8 0 0 1-6-15Z" />
-          </svg>
-        ) : (
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <ellipse cx="12" cy="12" rx="9" ry="5" />
-          </svg>
-        )}
-      </span>
-      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
-        <div
-          className="h-full rounded-full"
-          style={{ width: `${fill}%`, background: good ? "#34d399" : "#fb7185" }}
-        />
-      </div>
-    </div>
+    <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#6ee7b7]" fill="currentColor">
+      <path d="M12 3 13.5 8 19 8.2 14.8 11.5 16.5 17 12 13.8 7.5 17 9.2 11.5 5 8.2 10.5 8Z" />
+    </svg>
   );
 }
 
-function TabsBar({ tabs, onGo }: { tabs: Tabs; onGo: (id: string) => void }) {
+function YouPin() {
   return (
-    <nav className="grid grid-cols-2 border-t border-white/10 bg-[#0b1220] px-6 py-2">
-      <button
-        type="button"
-        onClick={() => onGo(tabs.list)}
-        className={`flex flex-col items-center gap-0.5 text-[10px] ${tabs.active === "list" ? "text-[#34d399]" : "text-[#64748b]"}`}
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="M8 7h12M8 12h12M8 17h12" />
-          <circle cx="4" cy="7" r="1.2" fill="currentColor" stroke="none" />
-          <circle cx="4" cy="12" r="1.2" fill="currentColor" stroke="none" />
-          <circle cx="4" cy="17" r="1.2" fill="currentColor" stroke="none" />
-        </svg>
-      </button>
-      <button
-        type="button"
-        onClick={() => onGo(tabs.map)}
-        className={`flex flex-col items-center gap-0.5 text-[10px] ${tabs.active === "map" ? "text-[#34d399]" : "text-[#64748b]"}`}
-      >
-        <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="1.8">
-          <path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3V7Z" />
-          <path d="M9 4v13M15 7v13" />
-        </svg>
-      </button>
-    </nav>
+    <span className="relative flex h-3.5 w-3.5">
+      <span className="absolute inset-0 animate-ping rounded-full bg-[#7dd3fc] opacity-50" />
+      <span className="relative m-auto block h-3.5 w-3.5 rounded-full bg-[#38bdf8] ring-2 ring-white" />
+    </span>
   );
 }
 
-function PlaceCard({
-  place,
-  active,
+function MiniMap({
+  here,
+  spots,
   onClick,
 }: {
-  place: Place;
-  active?: boolean;
+  here?: Place;
+  spots?: Place[];
   onClick?: () => void;
 }) {
-  const p = pSee(place);
-  const cls = [
-    "flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left",
-    active ? "bg-[#34d399]/12 ring-1 ring-[#34d399]/40" : "bg-white/5",
-  ].join(" ");
   const inner = (
     <>
-      <div
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#e2e8f0]"
-        style={{
-          background: `linear-gradient(160deg, ${tone(p)}55, #0f172a)`,
-        }}
-      >
-        <Icon kind={place.kind} className="h-5 w-5" />
+      <div className="pointer-events-none absolute inset-0">
+        <div className="absolute left-[12%] top-[18%] h-[1px] w-[70%] rotate-12 bg-white/10" />
+        <div className="absolute left-[8%] top-[58%] h-[1px] w-[80%] -rotate-6 bg-white/10" />
+        <div className="absolute left-[40%] top-[8%] h-[70%] w-[1px] bg-white/10" />
       </div>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-1.5">
-          <span className="truncate text-[14px] font-semibold text-[#f8fafc]">{place.name}</span>
-          <StarIcon on={place.favorite} />
-        </div>
-        <div className="mt-1 flex items-center gap-2">
-          <span className="text-[11px] tabular-nums text-[#64748b]">{place.km} км</span>
-          <span className="flex items-center gap-0.5 text-[#94a3b8]">
-            <CloudIcon className="h-3 w-3" />
-            <span
-              className="h-1 w-10 overflow-hidden rounded-full bg-white/10"
-            >
-              <span
-                className="block h-full"
-                style={{
-                  width: `${100 - place.cloud}%`,
-                  background: place.cloud < 30 ? "#34d399" : "#fb7185",
-                }}
-              />
-            </span>
-          </span>
-        </div>
-      </div>
-      <div className="text-right">
-        <div className="text-[22px] font-semibold leading-none tabular-nums" style={{ color: tone(p) }}>
-          {p}
-        </div>
-      </div>
+      {spots?.map((spot) => {
+        const p = pSee(spot);
+        return (
+          <span
+            key={spot.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+            style={{
+              left: `${spot.x}%`,
+              top: `${spot.y}%`,
+              width: spot.best ? 10 : 7,
+              height: spot.best ? 10 : 7,
+              background: tone(p),
+              boxShadow: spot.best ? `0 0 12px ${tone(p)}` : undefined,
+            }}
+          />
+        );
+      })}
+      {here ? (
+        <span
+          className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
+          style={{ left: `${here.x}%`, top: `${here.y}%` }}
+        >
+          <YouPin />
+        </span>
+      ) : null}
     </>
   );
+  const surface = {
+    background:
+      "radial-gradient(ellipse 70% 50% at 60% 30%, rgba(110,231,183,0.28), transparent 62%), linear-gradient(#1c2a24, #141c18)",
+  };
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className={cls}>
+      <button type="button" onClick={onClick} className="relative h-full w-full overflow-hidden" style={surface}>
         {inner}
       </button>
     );
   }
-  return <div className={cls}>{inner}</div>;
+  return (
+    <div className="relative h-full w-full overflow-hidden" style={surface}>
+      {inner}
+    </div>
+  );
 }
 
 export function AuroraScene({
@@ -258,7 +184,6 @@ export function AuroraScene({
   choices,
   onChoice,
   onAdvance,
-  onGo,
 }: {
   payload: AuroraPayload;
   choices?: Choice[];
@@ -267,243 +192,225 @@ export function AuroraScene({
   onGo?: (id: string) => void;
 }) {
   const primary = choices?.find((c) => c.variant === "primary");
-  const goTab = (id: string) => onGo?.(id);
+  const ghost = choices?.find((c) => c.variant === "ghost");
 
-  if (payload.mode === "lock") {
+  if (payload.mode === "lock" && payload.place) {
+    const p = pSee(payload.place);
     return (
       <button
         type="button"
         onClick={onAdvance}
-        className="relative flex h-full w-full flex-col overflow-hidden px-4 pb-7 pt-8 text-left"
+        className="relative flex h-full w-full flex-col overflow-hidden px-4 pb-6 pt-6 text-left"
         style={{
           background:
-            "radial-gradient(ellipse 90% 48% at 62% 16%, rgba(52,211,153,0.5), transparent 60%), radial-gradient(ellipse 55% 36% at 18% 10%, rgba(167,139,250,0.32), transparent 55%), linear-gradient(#04060f, #0b1b24 58%, #071018)",
+            "radial-gradient(ellipse 80% 50% at 70% 0%, rgba(110,231,183,0.22), transparent 55%), linear-gradient(#1a2420, #121816)",
         }}
       >
-        <div className="text-center text-[#e2e8f0]">
-          <div className="text-[52px] font-semibold leading-none tracking-tight tabular-nums">{payload.time}</div>
-          <div className="mt-1 text-[12px] text-[#94a3b8]">{payload.date}</div>
+        <div className="text-center">
+          <div className="text-[56px] font-semibold leading-none tracking-tight tabular-nums text-[#f3f6f4]">
+            {payload.time}
+          </div>
+          <div className="mt-1 text-[13px] text-[#9aa89f]">{payload.date}</div>
         </div>
-        <div className="mt-auto animate-slide-up flex items-center gap-3 rounded-2xl bg-[#121826]/92 p-2.5 ring-1 ring-white/10 backdrop-blur">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#34d399]/20 text-[#34d399]">
-            <Icon kind="shore" className="h-5 w-5" />
+        <div className="mt-auto flex items-center gap-3 rounded-[1.4rem] bg-[#2a322e]/90 p-2.5 ring-1 ring-white/10">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
+            <Icon kind={payload.place.kind} className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] text-[#94a3b8]">{payload.appName}</div>
-            <div className="text-[14px] font-semibold text-[#f8fafc]">{payload.place as string}</div>
+            <div className="text-[11px] text-[#9aa89f]">{payload.appName}</div>
+            <div className="text-[15px] font-semibold text-[#f3f6f4]">{payload.place.name}</div>
           </div>
           <div className="text-right">
-            <div className="text-[20px] font-semibold tabular-nums text-[#34d399]">{payload.p}</div>
-            <div className="text-[10px] tabular-nums text-[#64748b]">{payload.km} км</div>
+            <div className="text-[22px] font-semibold tabular-nums" style={{ color: tone(p) }}>
+              {p}
+            </div>
+            <div className="text-[10px] tabular-nums text-[#9aa89f]">{payload.place.km} км</div>
           </div>
         </div>
       </button>
     );
   }
 
-  if (payload.mode === "list" && payload.places && payload.here) {
-    const hereP = pSee(payload.here);
+  if (payload.mode === "brief") {
+    const hereP = payload.here ? pSee(payload.here) : 0;
+    const bestP = payload.best ? pSee(payload.best) : 0;
     return (
-      <div className="flex h-full w-full flex-col bg-[#070b14]">
-        <div className="flex min-h-0 flex-1 flex-col px-3 pt-1">
-          <div className="mb-2 flex items-center gap-3 rounded-2xl bg-[#0f172a] px-3 py-2 ring-1 ring-white/10">
-            <Ring p={hereP} size={52} />
-            <div className="min-w-0 flex-1 text-left">
-              <div className="flex items-center gap-1.5 text-[13px] font-semibold text-[#f8fafc]">
-                <Icon kind="here" className="h-3.5 w-3.5 text-[#38bdf8]" />
-                {payload.here.name}
+      <div
+        className="flex h-full w-full flex-col overflow-y-auto px-4 pb-3 pt-1"
+        style={{
+          background:
+            "radial-gradient(ellipse 90% 40% at 50% -10%, #2a3d34, transparent 60%), #15201c",
+        }}
+      >
+        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[#f3f6f4]">
+          {payload.headline}
+        </h1>
+        <p className="mt-1 text-[14px] text-[#c5d0c8]">{payload.kicker}</p>
+        <p className="mt-3 text-[13px] text-[#c5d0c8]">
+          Сейчас <span className="text-[#9fe1c3]">{hereP}</span>
+          {" · "}ясно на{" "}
+          <span className="text-[#9fe1c3]">{payload.best?.name}</span>
+        </p>
+
+        <button
+          type="button"
+          onClick={onAdvance}
+          className="relative mt-3 h-[148px] overflow-hidden rounded-[1.6rem] text-left ring-1 ring-white/10"
+        >
+          <MiniMap here={payload.here} spots={payload.spots} />
+          <span className="absolute left-3 top-3 rounded-full bg-black/35 px-2 py-0.5 text-[11px] text-[#e8eee9] backdrop-blur">
+            ты
+          </span>
+          <span
+            className="absolute bottom-3 right-3 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#052e1c]"
+            style={{ background: tone(hereP) }}
+          >
+            {hereP}
+          </span>
+        </button>
+
+        <div className="mt-3 rounded-[1.6rem] bg-[#5c5878] px-3 pb-3 pt-2.5">
+          <div className="flex justify-between">
+            {payload.hourly?.map((h) => (
+              <div key={h.t} className="flex w-9 flex-col items-center gap-1">
+                <span className="text-[9px] text-[#d6d3ea]">{h.t}:00</span>
+                <SkyIcon cloud={h.cloud} />
+                <span className="text-[11px] font-semibold tabular-nums text-white">
+                  {100 - h.cloud}
+                </span>
               </div>
-              <div className="mt-1.5">
-                <Meter icon="cloud" value={payload.here.cloud} invert />
-              </div>
-            </div>
-          </div>
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pb-2">
-            {payload.places.map((place) => (
-              <PlaceCard
-                key={place.id}
-                place={place}
-                active={place.best}
-                onClick={place.best ? onAdvance : undefined}
-              />
             ))}
           </div>
         </div>
-        {payload.tabs && onGo ? <TabsBar tabs={payload.tabs} onGo={goTab} /> : null}
+
+        {payload.best ? (
+          <div className="mt-3 rounded-[1.6rem] bg-[#24302c] p-3 ring-1 ring-white/10">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
+                <Icon kind={payload.best.kind} className="h-6 w-6" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-[16px] font-semibold text-[#f3f6f4]">{payload.best.name}</div>
+                <div className="mt-0.5 text-[12px] tabular-nums text-[#9aa89f]">
+                  {payload.eta}
+                  {" · "}
+                  {payload.best.km} км
+                </div>
+              </div>
+              <div className="text-[28px] font-semibold tabular-nums" style={{ color: tone(bestP) }}>
+                {bestP}
+              </div>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {ghost ? (
+                <button
+                  type="button"
+                  onClick={() => onChoice(ghost)}
+                  className="rounded-full bg-[#3a4540] py-2.5 text-[13px] font-medium text-[#e8eee9]"
+                >
+                  {ghost.label}
+                </button>
+              ) : null}
+              {primary ? (
+                <button
+                  type="button"
+                  onClick={() => onChoice(primary)}
+                  className="rounded-full bg-[#e8eee9] py-2.5 text-[13px] font-semibold text-[#15201c]"
+                >
+                  {primary.label}
+                </button>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     );
   }
 
-  if (payload.mode === "detail" && payload.place && typeof payload.place !== "string") {
-    const place = payload.place;
-    const p = pSee(place);
-    return (
-      <div className="flex h-full w-full flex-col bg-[#070b14]">
-        <div
-          className="relative flex min-h-0 flex-1 flex-col px-4 pt-2"
-          style={{
-            background: `radial-gradient(ellipse 80% 45% at 50% 0%, ${tone(p)}33, transparent 70%)`,
-          }}
-        >
-          <div className="flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => onGo?.(payload.tabs?.list ?? "")}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-white/5 text-[#e2e8f0]"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m14 6-6 6 6 6" />
-              </svg>
-            </button>
-            <StarIcon on={place.favorite} />
-          </div>
-          <div className="mt-2 flex flex-col items-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 text-[#f8fafc]">
-              <Icon kind={place.kind} className="h-6 w-6" />
-            </div>
-            <div className="mt-2 text-[18px] font-semibold text-[#f8fafc]">{place.name}</div>
-            <div className="mt-3">
-              <Ring p={p} size={108} />
-            </div>
-          </div>
-          <div className="mt-4 space-y-2.5 rounded-2xl bg-white/5 p-3">
-            <Meter icon="oval" value={place.oval} />
-            <Meter icon="cloud" value={place.cloud} invert />
-            <Meter icon="dark" value={place.dark ? 100 : 0} />
-          </div>
-          <div className="mt-3 flex items-center justify-center gap-2">
-            <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] tabular-nums text-[#cbd5e1]">
-              {place.km} км
-            </span>
-            {payload.vsHere != null ? (
-              <span className="rounded-full bg-white/10 px-2.5 py-1 text-[11px] tabular-nums text-[#94a3b8]">
-                здесь {payload.vsHere}
-              </span>
-            ) : null}
-          </div>
-          {primary ? (
-            <button
-              type="button"
-              onClick={() => onChoice(primary)}
-              className="mt-auto mb-3 flex items-center justify-center gap-2 rounded-2xl bg-[#34d399] py-3 text-sm font-semibold text-[#052e1c] active:scale-[0.98]"
-            >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="m3 7 6-3 6 3 6-3v13l-6 3-6-3-6 3V7Z" />
-              </svg>
-              {primary.label}
-            </button>
-          ) : null}
-        </div>
-        {payload.tabs && onGo ? <TabsBar tabs={payload.tabs} onGo={goTab} /> : null}
-      </div>
-    );
-  }
-
-  if (payload.mode === "map" && payload.spots) {
+  if (payload.mode === "map") {
     const sheet = payload.sheet;
     const sheetP = sheet ? pSee(sheet) : 0;
     return (
-      <div className="flex h-full w-full flex-col bg-[#070b14]">
-        <div
-          className="relative min-h-0 flex-1"
-          style={{
-            background:
-              "radial-gradient(ellipse 70% 42% at 62% 28%, rgba(52,211,153,0.4), transparent 68%), radial-gradient(ellipse 40% 28% at 28% 20%, rgba(167,139,250,0.22), transparent 60%), #0a1220",
-          }}
-        >
-          {payload.here ? (
-            <div
-              className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-              style={{ left: `${payload.here.x}%`, top: `${payload.here.y}%` }}
-            >
-              <span className="block h-3 w-3 rounded-full bg-[#38bdf8] ring-4 ring-[#38bdf8]/30" />
-            </div>
-          ) : null}
-          {payload.spots.map((spot) => {
-            const p = pSee(spot);
-            const clickable = spot.best && onAdvance;
-            const pos = { left: `${spot.x ?? 50}%`, top: `${spot.y ?? 50}%` };
-            const pin = (
-              <span
-                className="flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-[10px] font-semibold tabular-nums text-[#052e1c]"
-                style={{ background: tone(p) }}
-              >
-                {p}
-              </span>
-            );
-            if (clickable) {
-              return (
-                <button
-                  key={spot.id}
-                  type="button"
-                  onClick={onAdvance}
-                  className="absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                  style={pos}
-                >
-                  {pin}
-                </button>
-              );
-            }
-            return (
-              <div key={spot.id} className="absolute -translate-x-1/2 -translate-y-1/2" style={pos}>
-                {pin}
-              </div>
-            );
-          })}
-          {sheet ? (
+      <div className="relative h-full w-full bg-[#141c18]">
+        <MiniMap here={payload.here} spots={payload.spots} />
+        <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2">
+          <span className="rounded-full bg-black/40 px-2 py-1 text-[11px] text-[#e8eee9] backdrop-blur">
+            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#38bdf8]" />
+            ты
+          </span>
+        </div>
+        {payload.spots?.map((spot) => {
+          if (!spot.best) return null;
+          const p = pSee(spot);
+          return (
             <button
+              key={spot.id}
               type="button"
               onClick={onAdvance}
-              className="absolute inset-x-3 bottom-3 z-30 flex items-center gap-3 rounded-2xl bg-[#121826]/95 p-2.5 text-left ring-1 ring-white/10 backdrop-blur"
+              className="absolute z-20 -translate-x-1/2 -translate-y-[120%] rounded-full px-2 py-1 text-[11px] font-semibold tabular-nums text-[#052e1c]"
+              style={{
+                left: `${spot.x}%`,
+                top: `${spot.y}%`,
+                background: tone(p),
+              }}
             >
-              <div
-                className="flex h-11 w-11 items-center justify-center rounded-xl text-[#f8fafc]"
-                style={{ background: `linear-gradient(160deg, ${tone(sheetP)}66, #0f172a)` }}
-              >
-                <Icon kind={sheet.kind} className="h-5 w-5" />
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-[14px] font-semibold text-[#f8fafc]">{sheet.name}</div>
-                <div className="mt-1.5">
-                  <Meter icon="cloud" value={sheet.cloud} invert />
-                </div>
-              </div>
-              <div className="text-[22px] font-semibold tabular-nums" style={{ color: tone(sheetP) }}>
-                {sheetP}
-              </div>
+              {spot.name} {p}
             </button>
-          ) : null}
-        </div>
-        {payload.tabs && onGo ? <TabsBar tabs={payload.tabs} onGo={goTab} /> : null}
+          );
+        })}
+        {sheet ? (
+          <button
+            type="button"
+            onClick={onAdvance}
+            className="absolute inset-x-3 bottom-3 z-30 flex items-center gap-3 rounded-[1.4rem] bg-[#24302c]/95 p-3 text-left ring-1 ring-white/10"
+          >
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
+              <Icon kind={sheet.kind} className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[15px] font-semibold text-[#f3f6f4]">{sheet.name}</div>
+              <div className="text-[11px] tabular-nums text-[#9aa89f]">
+                {payload.eta} · {sheet.km} км
+              </div>
+            </div>
+            <div className="text-[24px] font-semibold tabular-nums" style={{ color: tone(sheetP) }}>
+              {sheetP}
+            </div>
+          </button>
+        ) : null}
       </div>
     );
   }
 
-  const finale = payload.place && typeof payload.place !== "string" ? payload.place : null;
-  const finaleP = finale ? pSee(finale) : payload.p ?? 0;
+  const finale = payload.place;
+  const finaleP = finale ? pSee(finale) : 0;
   return (
     <button
       type="button"
       onClick={onAdvance}
-      className="flex h-full w-full flex-col items-center justify-center gap-4 bg-[#070b14] px-6"
+      className="flex h-full w-full flex-col justify-end px-4 pb-8 text-left"
       style={{
-        background: `radial-gradient(ellipse 80% 50% at 50% 30%, ${tone(finaleP)}33, #070b14 70%)`,
+        background: `radial-gradient(ellipse 80% 50% at 50% 20%, ${tone(finaleP)}33, #15201c 70%)`,
       }}
     >
-      {finale ? (
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10 text-[#f8fafc]">
-          <Icon kind={finale.kind} className="h-7 w-7" />
+      <div className="rounded-[1.6rem] bg-[#24302c] p-4 ring-1 ring-white/10">
+        {finale ? (
+          <div className="flex items-center gap-3">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
+              <Icon kind={finale.kind} className="h-6 w-6" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <div className="text-[18px] font-semibold text-[#f3f6f4]">{finale.name}</div>
+              <div className="text-[12px] tabular-nums text-[#9aa89f]">{payload.eta}</div>
+            </div>
+            <div className="text-[32px] font-semibold tabular-nums" style={{ color: tone(finaleP) }}>
+              {finaleP}
+            </div>
+          </div>
+        ) : null}
+        <div className="mt-4 rounded-full bg-[#e8eee9] py-2.5 text-center text-[13px] font-semibold text-[#15201c]">
+          Маршрут
         </div>
-      ) : null}
-      <Ring p={finaleP} size={120} />
-      <div className="text-[20px] font-semibold text-[#f8fafc]">{finale?.name}</div>
-      <div className="flex items-center gap-2">
-        <span className="rounded-full bg-[#34d399] px-3 py-1.5 text-[12px] font-semibold text-[#052e1c]">
-          {payload.eta}
-        </span>
-        <span className="rounded-full bg-white/10 px-3 py-1.5 text-[12px] tabular-nums text-[#cbd5e1]">
-          {finale?.km} км
-        </span>
       </div>
     </button>
   );

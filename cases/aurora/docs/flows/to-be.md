@@ -1,6 +1,6 @@
-# Aurora — to-be (P_see)
+# Aurora — to-be (brief)
 
-One number on a **spot** (берег / плато / озеро), not a city. List and map share it.
+Now-brief: headline, **map with you on it**, hourly sky, one recommended spot.
 
 Prototype only — scripted places, no live NOAA.
 
@@ -10,25 +10,18 @@ Related: [as-is today](./as-is.md)
 
 ```mermaid
 sequenceDiagram
-  participant NOAA as NOAA OVATION
-  participant Wx as Clouds
   participant App as Aurora
   participant W as Watcher
 
-  NOAA-->>App: oval grid
-  Wx-->>App: cloud %
-  App->>App: P_see = oval × (1 − cloud) × dark
-  App->>W: Push — best nearby spot
-  W->>App: List of spots (здесь + ranked)
-  W->>App: Spot — gauges, not copy
-  W->>App: Map + sheet
+  App->>W: Push — best spot
+  W->>App: Evening brief (map + you, hourly, route card)
+  W->>App: Full map, still you + nearby spots
   W->>W: Go
 ```
 
 ## Happy path
 
-1. Push: best spot (Берег) with % and km.
-2. List of observation places. Здесь is a HUD, not a city row.
-3. Spot screen: ring + three meters.
-4. Map: % pins, same number, bottom sheet.
-5. Go / replay.
+1. Lock banner: spot + number.
+2. Brief: map with current position, hourly clouds, «Ехать / Остаться».
+3. Map: you (pulse) + spots as dots.
+4. Go / replay.

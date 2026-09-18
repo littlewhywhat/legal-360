@@ -86,7 +86,11 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
-      <PhoneFrame deviceLabel={deviceLabel(scene)}>
+      <PhoneFrame
+        deviceLabel={deviceLabel(scene)}
+        chrome={scene.app === "aurora" ? "dark" : "light"}
+        clock={scene.app === "aurora" ? "21:14" : "9:41"}
+      >
         {scene.app === "email" ? (
           <EmailScene
             payload={scene.payload as never}
