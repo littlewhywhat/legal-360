@@ -182,7 +182,7 @@ function Factor({ label, value, bar }: { label: string; value: string; bar: numb
 
 function Row({ title, meta }: { title: string; meta: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 py-1.5">
+    <div className="flex items-baseline justify-between gap-2 py-1">
       <span className="text-[13px] text-[#f3f6f4]">{title}</span>
       <span className="shrink-0 text-[11px] tabular-nums text-[#9aa89f]">{meta}</span>
     </div>
@@ -295,14 +295,14 @@ export function AuroraScene({
             <button
               type="button"
               onClick={() => onGo?.(`s3-${nearest.id}`)}
-              className="bg-[#15201c] px-3 py-2 text-left"
+              className="bg-[#15201c] px-3 py-1.5 text-left"
             >
               <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">ближайшее</div>
               <div className="mt-0.5 flex items-baseline justify-between gap-1">
                 <span className="text-[13px] font-semibold text-[#f3f6f4]">{nearest.name}</span>
                 <span className="text-[11px] tabular-nums text-[#9aa89f]">{nearest.km} км</span>
               </div>
-              <div className="text-[16px] font-semibold tabular-nums" style={{ color: tone(pSee(nearest)) }}>
+              <div className="text-[15px] font-semibold tabular-nums" style={{ color: tone(pSee(nearest)) }}>
                 {pSee(nearest)}
               </div>
             </button>
@@ -311,20 +311,20 @@ export function AuroraScene({
             <button
               type="button"
               onClick={() => onGo?.(`s3-${probable.id}`)}
-              className="bg-[#15201c] px-3 py-2 text-left"
+              className="bg-[#15201c] px-3 py-1.5 text-left"
             >
               <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">вероятнее</div>
               <div className="mt-0.5 flex items-baseline justify-between gap-1">
                 <span className="text-[13px] font-semibold text-[#f3f6f4]">{probable.name}</span>
                 <span className="text-[11px] tabular-nums text-[#9aa89f]">{probable.km} км</span>
               </div>
-              <div className="text-[16px] font-semibold tabular-nums" style={{ color: tone(pSee(probable)) }}>
+              <div className="text-[15px] font-semibold tabular-nums" style={{ color: tone(pSee(probable)) }}>
                 {pSee(probable)}
               </div>
             </button>
           ) : null}
         </div>
-        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3">
+        <div className="min-h-0 flex-1 space-y-2 overflow-y-auto px-3 py-2">
           {payload.spots?.map((spot) => {
             const n = pSee(spot);
             return (
@@ -332,9 +332,9 @@ export function AuroraScene({
                 key={spot.id}
                 type="button"
                 onClick={() => onGo?.(`s3-${spot.id}`)}
-                className="relative block w-full overflow-hidden rounded-[1.25rem] text-left ring-1 ring-white/10"
+                className="relative block w-full overflow-hidden rounded-[1.1rem] text-left ring-1 ring-white/10"
               >
-                <Photo kind={spot.kind} className="h-[132px] w-full" />
+                <Photo kind={spot.kind} className="h-[92px] w-full" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8">
                   <span className="text-[16px] font-semibold text-white">{spot.name}</span>
                   <span className="text-[11px] tabular-nums text-white/80">{spot.km} км</span>
@@ -356,12 +356,12 @@ export function AuroraScene({
     return (
       <div className="flex h-full w-full flex-col bg-[#121816]">
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <Photo kind={place.kind} className="h-36 w-full" />
+          <Photo kind={place.kind} className="h-28 w-full" />
           <div className="px-3 pb-3 pt-3">
             <div className="flex items-start justify-between gap-2">
               <div>
                 <h1 className="text-[22px] font-semibold leading-none text-[#f3f6f4]">{place.name}</h1>
-                <p className="mt-1 text-[12px] tabular-nums text-[#9aa89f]">{place.km} км · место, не город</p>
+                <p className="mt-1 text-[12px] tabular-nums text-[#9aa89f]">{place.km} км</p>
               </div>
               <Badge n={n} onClick={() => onGo?.(`s4-${place.id}`)} />
             </div>
@@ -499,7 +499,7 @@ export function AuroraScene({
         </div>
         <div className="mt-3 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">способы</div>
         {ways.map((way) => (
-          <div key={way.title} className="py-1.5">
+          <div key={way.title} className="py-1">
             <div className="flex items-baseline justify-between gap-2">
               <span className="text-[13px] text-[#f3f6f4]">{way.title}</span>
               <span className="shrink-0 text-[11px] tabular-nums text-[#9aa89f]">{way.duration}</span>
