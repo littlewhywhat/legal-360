@@ -28,6 +28,7 @@ export type DevicesPayload = {
   inject?: { id: string; fault: Fault };
   spawn?: { name: string; kind: Kind; protocol: Protocol };
   reset?: boolean;
+  coach?: { title: string; body: string };
 };
 
 export const FAIL_THRESHOLD = 4;

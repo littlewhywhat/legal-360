@@ -13,6 +13,9 @@ importers:
       '@cases/device-monitor':
         specifier: workspace:*
         version: link:../../cases/device-monitor
+      '@cases/device-monitor-play':
+        specifier: workspace:*
+        version: link:../../cases/device-monitor-play
       '@cases/legal-360':
         specifier: workspace:*
         version: link:../../cases/legal-360
@@ -64,6 +67,12 @@ importers:
         version: 5.9.3
 
   cases/device-monitor:
+    dependencies:
+      '@demo/runtime':
+        specifier: workspace:*
+        version: link:../../packages/demo-runtime
+
+  cases/device-monitor-play:
     dependencies:
       '@demo/runtime':
         specifier: workspace:*

@@ -58,6 +58,77 @@
   animation: status-pulse 1.8s ease-in-out infinite;
 }
 
+@keyframes cam-pan {
+  0% {
+    background-position: 12% 40%;
+  }
+  100% {
+    background-position: 88% 60%;
+  }
+}
+
+@keyframes cam-flicker {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  41% {
+    opacity: 0.45;
+  }
+  43% {
+    opacity: 1;
+  }
+  78% {
+    opacity: 0.62;
+  }
+}
+
+@keyframes cam-scan {
+  0% {
+    transform: translateY(-120%);
+  }
+  100% {
+    transform: translateY(120%);
+  }
+}
+
+.cam-live {
+  background:
+    radial-gradient(ellipse at 28% 18%, rgba(56, 189, 248, 0.45), transparent 52%),
+    linear-gradient(115deg, #0b1220 0%, #1e3a4c 42%, #0f172a 100%);
+  background-size: 180% 180%;
+  animation: cam-pan 9s ease-in-out infinite alternate;
+}
+
+.cam-lossy {
+  filter: grayscale(0.75) contrast(1.35) brightness(0.9);
+  animation: cam-flicker 1.35s linear infinite;
+}
+
+.cam-dead {
+  background: #050505;
+}
+
+.cam-scanlines {
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.05) 0 1px,
+    transparent 1px 3px
+  );
+}
+
+.cam-scan-bar {
+  animation: cam-scan 2.8s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cam-live,
+  .cam-lossy,
+  .cam-scan-bar {
+    animation: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .status-pulse {
     animation: none !important;

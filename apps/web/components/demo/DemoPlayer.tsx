@@ -10,6 +10,7 @@ import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
 import { DevicesScene } from "./devices/DevicesScene";
+import { DevicesPlayScene } from "./devices/DevicesPlayScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -63,7 +64,8 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
           !!scene.choices &&
           scene.choices.length > 0 &&
           scene.app !== "email" &&
-          scene.app !== "devices";
+          scene.app !== "devices" &&
+          scene.app !== "devices-play";
         if (scene.next && !hasBlockingChoices) {
           e.preventDefault();
           advance();
@@ -85,7 +87,9 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
   return (
     <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
-      <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
+      {demoCase.meta.hideSteps ? null : (
+        <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
+      )}
 
       <PhoneFrame deviceLabel={deviceLabel(scene)}>
         {scene.app === "email" ? (
@@ -125,6 +129,14 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onAdvance={scene.next ? advance : undefined}
           />
         ) : null}
+        {scene.app === "devices-play" ? (
+          <DevicesPlayScene
+            sceneId={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+          />
+        ) : null}
       </PhoneFrame>
 
       <p className="max-w-sm px-4 text-center text-sm text-[var(--stage-muted)]">
@@ -140,7 +152,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
           Reset
         </button>
         <span aria-hidden>·</span>
-        <span>Tap through · Home resets</span>
+        <span>{demoCase.meta.hideSteps ? "Play · Home resets" : "Tap through · Home resets"}</span>
       </div>
     </div>
   );
