@@ -3,5 +3,7 @@
   "framework": "nextjs",
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm --filter web build",
-  "outputDirectory": "out"
+  "outputDirectory": "out",
+  "cleanUrls": true,
+  "trailingSlash": true
 }
