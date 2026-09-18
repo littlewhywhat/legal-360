@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Choice, DemoCase, Scene } from "@demo/runtime";
 import { PhoneFrame } from "./PhoneFrame";
@@ -9,6 +9,7 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { AuroraScene } from "./AuroraScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -16,6 +17,8 @@ function deviceLabel(scene: Scene): string {
       return "Client phone";
     case "supervisor":
       return "Supervisor phone";
+    case "watcher":
+      return "Your phone";
     default:
       return "System";
   }
@@ -31,16 +34,43 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const sceneId =
     paramScene && sceneById[paramScene] ? paramScene : firstSceneId;
   const scene = sceneById[sceneId];
+  const stackRef = useRef<string[]>([sceneId]);
+  const [canBack, setCanBack] = useState(false);
 
-  const go = useCallback(
+  const navigate = useCallback(
     (nextId: string) => {
-      if (!sceneById[nextId]) return;
       const params = new URLSearchParams(searchParams.toString());
       params.set("s", nextId);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
-    [pathname, router, sceneById, searchParams],
+    [pathname, router, searchParams],
   );
+
+  const go = useCallback(
+    (nextId: string) => {
+      if (!sceneById[nextId]) return;
+      if (nextId === firstSceneId) {
+        stackRef.current = [firstSceneId];
+        setCanBack(false);
+        navigate(nextId);
+        return;
+      }
+      const top = stackRef.current[stackRef.current.length - 1];
+      if (nextId !== top) {
+        stackRef.current = [...stackRef.current, nextId];
+        setCanBack(stackRef.current.length > 1);
+      }
+      navigate(nextId);
+    },
+    [firstSceneId, navigate, sceneById],
+  );
+
+  const back = useCallback(() => {
+    if (stackRef.current.length < 2) return;
+    stackRef.current = stackRef.current.slice(0, -1);
+    setCanBack(stackRef.current.length > 1);
+    navigate(stackRef.current[stackRef.current.length - 1]);
+  }, [navigate]);
 
   const advance = useCallback(() => {
     if (scene.next) go(scene.next);
@@ -55,6 +85,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" || e.key === "Backspace") {
+        if (stackRef.current.length > 1) {
+          e.preventDefault();
+          back();
+        }
+      }
       if (e.key === "ArrowRight" || e.key === " ") {
         const hasBlockingChoices =
           !!scene.choices &&
@@ -72,7 +108,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, firstSceneId, go, scene]);
+  }, [advance, back, firstSceneId, go, scene]);
 
   const primaryChoice = useMemo(
     () => scene.choices?.find((c) => c.variant === "primary"),
@@ -83,7 +119,17 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
-      <PhoneFrame deviceLabel={deviceLabel(scene)}>
+      <PhoneFrame
+        deviceLabel={deviceLabel(scene)}
+        chrome={
+          scene.app === "aurora"
+            ? (scene.payload as { mode?: string }).mode === "lock"
+              ? "overlay"
+              : "dark"
+            : "light"
+        }
+        clock={scene.app === "aurora" ? "21:14" : "9:41"}
+      >
         {scene.app === "email" ? (
           <EmailScene
             payload={scene.payload as never}
@@ -112,22 +158,39 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onAdvance={scene.next ? advance : undefined}
           />
         ) : null}
+        {scene.app === "aurora" ? (
+          <AuroraScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
+            onBack={canBack ? back : undefined}
+          />
+        ) : null}
       </PhoneFrame>
 
       <p className="max-w-sm px-4 text-center text-sm text-[var(--stage-muted)]">
         {scene.hint}
       </p>
 
-      <div className="flex items-center gap-3 text-xs text-[var(--stage-muted)]">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={back}
+          disabled={!canBack}
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-fg)] disabled:cursor-default disabled:opacity-30"
+        >
+          Back
+        </button>
         <button
           type="button"
           onClick={() => go(firstSceneId)}
-          className="rounded-md px-2 py-1 underline-offset-2 hover:text-[var(--stage-fg)] hover:underline"
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-muted)] hover:text-[var(--stage-fg)]"
         >
           Reset
         </button>
-        <span aria-hidden>·</span>
-        <span>Tap through · Home resets</span>
       </div>
     </div>
   );
