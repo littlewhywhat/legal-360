@@ -228,8 +228,23 @@ export function AuroraScene({
     const p = pSee(payload.place);
     return (
       <div className="relative h-full w-full overflow-hidden">
-        <Photo kind={payload.place.kind} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-black/10" />
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(ellipse 90% 70% at 62% 8%, rgba(110,231,183,0.95), transparent 55%), radial-gradient(ellipse 70% 50% at 18% 28%, rgba(52,211,153,0.55), transparent 62%), radial-gradient(ellipse 50% 40% at 80% 45%, rgba(167,243,208,0.35), transparent 70%), linear-gradient(#12344a 0%, #1a5c4c 38%, #102830 70%, #0a1814 100%)",
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-80"
+          style={{
+            backgroundImage:
+              "radial-gradient(#fff 0.7px, transparent 0.8px), radial-gradient(#fff 0.45px, transparent 0.6px)",
+            backgroundPosition: "14px 20px, 40px 36px",
+            backgroundSize: "68px 68px, 44px 44px",
+          }}
+        />
+        <div className="absolute inset-x-0 bottom-0 h-[22%] bg-gradient-to-t from-black/70 to-transparent" />
         <div className="relative flex h-full flex-col px-3 pb-3 pt-9">
           <div className="grid grid-cols-4 gap-x-3 gap-y-3 px-1 pt-2">
             {ICONS.map((icon) => (
