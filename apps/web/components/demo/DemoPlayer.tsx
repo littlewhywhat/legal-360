@@ -129,7 +129,6 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             : "light"
         }
         clock={scene.app === "aurora" ? "21:14" : "9:41"}
-        onBack={canBack ? back : undefined}
       >
         {scene.app === "email" ? (
           <EmailScene
@@ -176,16 +175,22 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         {scene.hint}
       </p>
 
-      <div className="flex items-center gap-3 text-xs text-[var(--stage-muted)]">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={back}
+          disabled={!canBack}
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-fg)] disabled:cursor-default disabled:opacity-30"
+        >
+          ‹ Back
+        </button>
         <button
           type="button"
           onClick={() => go(firstSceneId)}
-          className="rounded-md px-2 py-1 underline-offset-2 hover:text-[var(--stage-fg)] hover:underline"
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-muted)] hover:text-[var(--stage-fg)]"
         >
           Reset
         </button>
-        <span aria-hidden>·</span>
-        <span>Tap through · ‹ back · Home resets</span>
       </div>
     </div>
   );

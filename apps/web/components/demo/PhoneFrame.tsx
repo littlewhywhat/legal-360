@@ -7,7 +7,6 @@ type PhoneFrameProps = {
   children: ReactNode;
   chrome?: "light" | "dark" | "overlay";
   clock?: string;
-  onBack?: () => void;
 };
 
 export function PhoneFrame({
@@ -15,7 +14,6 @@ export function PhoneFrame({
   children,
   chrome = "light",
   clock = "9:41",
-  onBack,
 }: PhoneFrameProps) {
   const overlay = chrome === "overlay";
   const dark = chrome === "dark" || overlay;
@@ -56,24 +54,11 @@ export function PhoneFrame({
           </div>
           <div
             className={[
-              "flex h-7 shrink-0 items-center px-2",
-              overlay ? "absolute inset-x-0 bottom-0 z-10 text-white" : bar,
+              "flex h-5 shrink-0 items-center justify-center",
+              overlay ? "absolute inset-x-0 bottom-1 z-10 text-white" : bar,
             ].join(" ")}
           >
-            {onBack ? (
-              <button
-                type="button"
-                onClick={onBack}
-                aria-label="Back"
-                className="flex h-7 w-8 items-center justify-center text-[22px] leading-none"
-              >
-                ‹
-              </button>
-            ) : (
-              <span className="w-8" />
-            )}
-            <span className="mx-auto h-1 w-[108px] rounded-full bg-current opacity-30" />
-            <span className="w-8" />
+            <span className="h-1 w-[108px] rounded-full bg-current opacity-30" />
           </div>
         </div>
       </div>
