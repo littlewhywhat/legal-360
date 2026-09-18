@@ -9,6 +9,7 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { DevicesScene } from "./devices/DevicesScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -16,6 +17,8 @@ function deviceLabel(scene: Scene): string {
       return "Client phone";
     case "supervisor":
       return "Supervisor phone";
+    case "ops":
+      return "Ops phone";
     default:
       return "System";
   }
@@ -59,7 +62,8 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         const hasBlockingChoices =
           !!scene.choices &&
           scene.choices.length > 0 &&
-          scene.app !== "email";
+          scene.app !== "email" &&
+          scene.app !== "devices";
         if (scene.next && !hasBlockingChoices) {
           e.preventDefault();
           advance();
@@ -109,6 +113,15 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             payload={scene.payload as never}
             primaryLabel={primaryChoice?.label}
             onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
+            onAdvance={scene.next ? advance : undefined}
+          />
+        ) : null}
+        {scene.app === "devices" ? (
+          <DevicesScene
+            sceneId={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
             onAdvance={scene.next ? advance : undefined}
           />
         ) : null}
