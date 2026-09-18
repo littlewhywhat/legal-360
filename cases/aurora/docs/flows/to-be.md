@@ -25,6 +25,6 @@ sequenceDiagram
 
 1. Lock: wallpaper + icons, banner «Сияния».
 2. Home: nearest + most probable, photo cards of places.
-3. Place: photo, P_see badge, night-date strip, map pin, reviews, Маршрут.
+3. Place: photo, P-score badge (`P 61%`), last-seen dates with year and score, map pin, reviews, Маршрут.
 4. Analysis: badge or date → oval, clouds, darkness, history. Not a Kp dashboard.
 5. Location gate, then trip from that point.
