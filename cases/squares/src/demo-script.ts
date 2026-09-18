@@ -275,7 +275,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goal",
-    hint: "Same goal list — session changes flash in. Select and Next, or Back.",
+    hint: "Same goal list — session changes flash in. Select and Next, or Back to goals.",
     choices: [
       { id: "next", label: "Next", next: "s3-ready", variant: "primary" },
     ],

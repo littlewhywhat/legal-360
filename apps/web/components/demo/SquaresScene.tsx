@@ -194,55 +194,23 @@ function WeekStrip({
   );
 }
 
-function TabBar({
-  active,
-  onHome,
-  onHistory,
-}: {
-  active: "home" | "history";
-  onHome?: () => void;
-  onHistory?: () => void;
-}) {
+function BackToGoals({ onClick }: { onClick?: () => void }) {
+  if (!onClick) return <span />;
   return (
-    <div className="mt-auto flex shrink-0 border-t border-white/5 bg-[#16161a]">
-      {(
-        [
-          ["home", "Home", onHome],
-          ["history", "History", onHistory],
-        ] as const
-      ).map(([id, label, handler]) => {
-        const on = active === id;
-        return (
-          <button
-            key={id}
-            type="button"
-            disabled={!on && !handler}
-            onClick={handler}
-            className={[
-              "flex-1 py-2.5 text-[11px] font-medium tracking-wide",
-              on ? "text-[#5eead4]" : "text-[#6b7280]",
-              !on && !handler ? "opacity-40" : "",
-            ].join(" ")}
-          >
-            {label}
-          </button>
-        );
-      })}
-    </div>
+    <button
+      type="button"
+      onClick={onClick}
+      className="pt-1 text-[11px] text-[#5eead4]"
+    >
+      Back to goals
+    </button>
   );
 }
 
-function Shell({
-  children,
-  footer,
-}: {
-  children: ReactNode;
-  footer?: ReactNode;
-}) {
+function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="relative flex h-full w-full min-w-0 flex-col bg-[#111113] text-[#ececec]">
       <div className="min-h-0 flex-1 overflow-y-auto px-3.5 pt-1">{children}</div>
-      {footer}
     </div>
   );
 }
@@ -323,15 +291,13 @@ export function SquaresScene({
 
   if (payload.mode === "insights") {
     return (
-      <Shell
-        footer={
-          <TabBar
-            active="history"
-            onHome={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
-          />
-        }
-      >
-        <p className="pt-1 text-[15px] font-semibold tracking-tight">Insights</p>
+      <Shell>
+        <BackToGoals
+          onClick={
+            payload.homeScene ? () => onGo(payload.homeScene!) : undefined
+          }
+        />
+        <p className="mt-2 text-[15px] font-semibold tracking-tight">Insights</p>
         <p className="mt-1 text-[11px] text-[#9aa0a6]">From your squares</p>
         <div className="mt-3 space-y-2">
           {payload.lines?.map((line) => (
@@ -412,7 +378,7 @@ function HomeView({
   }
 
   return (
-    <Shell footer={<TabBar active="home" onHistory={goHistory} />}>
+    <Shell>
       <div className="flex items-baseline justify-between pt-1">
         <p className="text-[15px] font-semibold tracking-tight">Squares</p>
         <p className="text-[11px] text-[#9aa0a6]">
@@ -560,7 +526,7 @@ function GoalOutline({
             onClick={onBack}
             className="text-[11px] text-[#5eead4]"
           >
-            Back
+            Back to goals
           </button>
         ) : (
           <span />
@@ -958,7 +924,7 @@ function HistoryView({
   if (open) {
     const groups = open.detail?.groups ?? [];
     return (
-      <Shell footer={<TabBar active="history" onHome={onHome} />}>
+      <Shell>
         <button
           type="button"
           onClick={() => setOpenId(null)}
@@ -1010,8 +976,9 @@ function HistoryView({
   }
 
   return (
-    <Shell footer={<TabBar active="history" onHome={onHome} />}>
-      <p className="pt-1 text-[15px] font-semibold tracking-tight">History</p>
+    <Shell>
+      <BackToGoals onClick={onHome} />
+      <p className="mt-2 text-[15px] font-semibold tracking-tight">History</p>
       <p className="mt-1 text-[11px] text-[#9aa0a6]">
         {daysOn} days with squares · tap a day
       </p>
