@@ -24,26 +24,38 @@ function deviceLabel(scene: Scene): string {
   }
 }
 
+function pathSceneId(pathname: string, caseId: string): string | null {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] !== caseId) return null;
+  return parts[1] ?? null;
+}
+
+function sceneHref(caseId: string, sceneId: string, firstSceneId: string): string {
+  if (sceneId === firstSceneId) return `/${caseId}/`;
+  return `/${caseId}/${sceneId}/`;
+}
+
 export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const paramScene = searchParams.get("s");
-  const { sceneById, firstSceneId } = demoCase;
+  const { sceneById, firstSceneId, meta } = demoCase;
+  const fromPath = pathSceneId(pathname, meta.id);
+  const fromQuery = searchParams.get("s");
 
   const sceneId =
-    paramScene && sceneById[paramScene] ? paramScene : firstSceneId;
+    (fromPath && sceneById[fromPath] && fromPath) ||
+    (fromQuery && sceneById[fromQuery] && fromQuery) ||
+    firstSceneId;
   const scene = sceneById[sceneId];
   const stackRef = useRef<string[]>([sceneId]);
   const [canBack, setCanBack] = useState(false);
 
   const navigate = useCallback(
     (nextId: string) => {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("s", nextId);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      router.replace(sceneHref(meta.id, nextId, firstSceneId), { scroll: false });
     },
-    [pathname, router, searchParams],
+    [firstSceneId, meta.id, router],
   );
 
   const go = useCallback(
