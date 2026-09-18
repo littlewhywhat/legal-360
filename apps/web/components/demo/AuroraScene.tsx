@@ -31,13 +31,13 @@ function tone(p: number): string {
 function Photo({ kind, className }: { kind: Kind; className?: string }) {
   const sky: Record<Kind, string> = {
     shore:
-      "radial-gradient(ellipse 90% 50% at 58% 8%, rgba(110,231,183,0.55), transparent 58%), radial-gradient(ellipse 40% 30% at 30% 18%, rgba(52,211,153,0.35), transparent 70%), linear-gradient(#071018 0%, #123028 42%, #0b1c18 62%, #08241c 100%)",
+      "radial-gradient(ellipse 90% 55% at 58% 12%, rgba(110,231,183,0.9), transparent 58%), radial-gradient(ellipse 50% 35% at 28% 22%, rgba(52,211,153,0.55), transparent 70%), linear-gradient(#16324a 0%, #1c5a48 40%, #143830 62%, #0c241c 100%)",
     plateau:
-      "radial-gradient(ellipse 100% 36% at 50% 22%, rgba(167,243,208,0.4), transparent 62%), linear-gradient(#0a1420, #1a3340 48%, #2a3d34 70%, #1b2a22)",
+      "radial-gradient(ellipse 100% 40% at 50% 18%, rgba(167,243,208,0.7), transparent 62%), linear-gradient(#14283c, #245060 48%, #2a3d34 70%, #1b2a22)",
     lake:
-      "radial-gradient(ellipse 70% 40% at 50% 18%, rgba(74,222,128,0.45), transparent 60%), linear-gradient(#081018, #102830 50%, #0c2428 78%, #071614)",
+      "radial-gradient(ellipse 70% 45% at 50% 16%, rgba(74,222,128,0.75), transparent 60%), linear-gradient(#122438, #1a4850 50%, #123438 78%, #0b221c)",
     hill:
-      "radial-gradient(ellipse 80% 44% at 62% 10%, rgba(110,231,183,0.38), transparent 58%), linear-gradient(#0c1018, #15202c 40%, #1a2420 100%)",
+      "radial-gradient(ellipse 80% 50% at 62% 8%, rgba(110,231,183,0.7), transparent 58%), linear-gradient(#182438, #243848 40%, #1a2420 100%)",
   };
   return (
     <div className={["relative overflow-hidden", className].join(" ")} style={{ background: sky[kind] }}>
@@ -229,7 +229,7 @@ export function AuroraScene({
     return (
       <div className="relative h-full w-full overflow-hidden">
         <Photo kind={payload.place.kind} className="absolute inset-0" />
-        <div className="absolute inset-0 bg-black/25" />
+        <div className="absolute inset-0 bg-black/10" />
         <div className="relative flex h-full flex-col px-3 pb-3 pt-9">
           <div className="grid grid-cols-4 gap-x-3 gap-y-3 px-1 pt-2">
             {ICONS.map((icon) => (
