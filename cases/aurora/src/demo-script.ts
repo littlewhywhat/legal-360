@@ -2,39 +2,58 @@ import type { Scene } from "@demo/runtime";
 
 export const TOTAL_STEPS = 5;
 
-const murmansk = {
-  id: "murmansk",
-  name: "Мурманск",
+const here = {
+  id: "here",
+  name: "Здесь",
+  kind: "here" as const,
   oval: 72,
   cloud: 62,
   dark: true,
+  km: 0,
   you: true,
 };
 
-const teriberka = {
-  id: "teriberka",
-  name: "Териберка",
+const shore = {
+  id: "shore",
+  name: "Берег",
+  kind: "shore" as const,
   oval: 74,
   cloud: 12,
   dark: true,
+  km: 118,
   favorite: true,
+  best: true,
 };
 
-const khibiny = {
-  id: "khibiny",
-  name: "Хибины",
+const plateau = {
+  id: "plateau",
+  name: "Плато",
+  kind: "plateau" as const,
   oval: 70,
   cloud: 38,
   dark: true,
+  km: 32,
   favorite: true,
 };
 
-const spb = {
-  id: "spb",
-  name: "Санкт-Петербург",
-  oval: 18,
-  cloud: 48,
+const lake = {
+  id: "lake",
+  name: "Озеро",
+  kind: "lake" as const,
+  oval: 71,
+  cloud: 55,
   dark: true,
+  km: 6,
+};
+
+const hill = {
+  id: "hill",
+  name: "Сопка",
+  kind: "hill" as const,
+  oval: 72,
+  cloud: 70,
+  dark: true,
+  km: 4,
 };
 
 export const scenes: Scene[] = [
@@ -44,15 +63,17 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "watcher",
     app: "aurora",
-    title: "Lock screen",
-    hint: "Tap the notification",
+    title: "Lock",
+    hint: "Tap the banner",
     next: "s2-list",
     payload: {
       mode: "lock",
       time: "21:14",
+      date: "пт 18 сен",
       appName: "Сияния",
-      title: "Дома 27% — облака",
-      body: "Териберка 65%, ясно. Открыть список?",
+      place: "Берег",
+      p: 65,
+      km: 118,
     },
   },
   {
@@ -61,14 +82,14 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "watcher",
     app: "aurora",
-    title: "Simple list",
-    hint: "Tap your city",
+    title: "Places",
+    hint: "Tap Берег",
     next: "s3-detail",
     payload: {
       mode: "list",
-      heading: "Сегодня",
-      sub: "P_see = овал × ясность × темнота",
-      cities: [murmansk, teriberka, khibiny, spb],
+      here,
+      places: [shore, plateau, lake, hill],
+      tabs: { list: "s2-list", map: "s4-map", active: "list" },
     },
   },
   {
@@ -77,20 +98,16 @@ export const scenes: Scene[] = [
     totalSteps: TOTAL_STEPS,
     device: "watcher",
     app: "aurora",
-    title: "Why not home",
-    hint: "Open the map for a clearer spot",
+    title: "Spot",
+    hint: "Open the map",
     choices: [
-      {
-        id: "map",
-        label: "Где лучше рядом",
-        next: "s4-map",
-        variant: "primary",
-      },
+      { id: "map", label: "Карта", next: "s4-map", variant: "primary" },
     ],
     payload: {
       mode: "detail",
-      city: murmansk,
-      verdict: "Овал есть. Решают облака.",
+      place: shore,
+      vsHere: 27,
+      tabs: { list: "s2-list", map: "s4-map", active: "list" },
     },
   },
   {
@@ -100,17 +117,19 @@ export const scenes: Scene[] = [
     device: "watcher",
     app: "aurora",
     title: "Map",
-    hint: "Tap Териберка",
+    hint: "Tap the sheet",
     next: "s5-go",
     payload: {
       mode: "map",
-      heading: "Кольский",
+      here: { ...here, x: 42, y: 58 },
       spots: [
-        { ...spb, x: 28, y: 78 },
-        { ...murmansk, x: 46, y: 44 },
-        { ...khibiny, x: 58, y: 56 },
-        { ...teriberka, x: 68, y: 30, best: true },
+        { ...hill, x: 36, y: 48 },
+        { ...lake, x: 50, y: 64 },
+        { ...plateau, x: 58, y: 40 },
+        { ...shore, x: 72, y: 22 },
       ],
+      sheet: shore,
+      tabs: { list: "s2-list", map: "s4-map", active: "map" },
     },
   },
   {
@@ -124,9 +143,8 @@ export const scenes: Scene[] = [
     next: "s1-lock",
     payload: {
       mode: "finale",
-      headline: "Ехать в Териберку",
-      detail: "65% · облака 12% · ~120 км",
-      footnote: "Дома 27% из‑за облаков 62%",
+      place: shore,
+      eta: "1ч 20м",
     },
   },
 ];

@@ -1,8 +1,8 @@
 # Aurora — to-be (P_see)
 
-One number at a saved place: oval × clear sky × darkness. List and map are the same number.
+One number on a **spot** (берег / плато / озеро), not a city. List and map share it.
 
-Prototype only — scripted cities, no live NOAA.
+Prototype only — scripted places, no live NOAA.
 
 Related: [as-is today](./as-is.md)
 
@@ -15,24 +15,20 @@ sequenceDiagram
   participant App as Aurora
   participant W as Watcher
 
-  NOAA-->>App: oval grid (30–90 min)
+  NOAA-->>App: oval grid
   Wx-->>App: cloud %
   App->>App: P_see = oval × (1 − cloud) × dark
-  App->>W: Push if tonight crosses threshold
-  W->>App: List — me + favorites
-  W->>App: Detail — why (облака vs овал)
-  W->>App: Map — same P_see as color
-  W->>W: Go to clearer nearby or stay
+  App->>W: Push — best nearby spot
+  W->>App: List of spots (здесь + ranked)
+  W->>App: Spot — gauges, not copy
+  W->>App: Map + sheet
+  W->>W: Go
 ```
 
-## Happy path (numbered)
+## Happy path
 
-1. After dark, push: home P_see is low **because of clouds**, not because the oval is dead.
-2. Simple list: my city + favorites, one percent each.
-3. Detail splits the number: oval / clouds / darkness.
-4. Map: tap the clearer nearby pin (Териберка).
-5. Decision beat: go or replay.
-
-## Not in this prototype
-
-Live OVATION, own OvationPyme, photos, 3/27-day forecast, always-on GPS, top-5 search.
+1. Push: best spot (Берег) with % and km.
+2. List of observation places. Здесь is a HUD, not a city row.
+3. Spot screen: ring + three meters.
+4. Map: % pins, same number, bottom sheet.
+5. Go / replay.

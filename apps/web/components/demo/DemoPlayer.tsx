@@ -121,6 +121,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             choices={scene.choices}
             onChoice={onChoice}
             onAdvance={scene.next ? advance : undefined}
+            onGo={go}
           />
         ) : null}
       </PhoneFrame>
