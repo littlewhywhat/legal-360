@@ -4,6 +4,8 @@ Shared story / flow engine. Each product demo is a case under `cases/`.
 
 Live: [https://legal-360.vercel.app/](https://legal-360.vercel.app/) · Legal 360: [/legal-360](https://legal-360.vercel.app/legal-360) · Aurora: [/aurora](https://legal-360.vercel.app/aurora)
 
+Aurora job: inspire a trip to an observation place and show how to get there. Number on the card is P_see.
+
 ## Cases
 
 | Case | Path | Flows |

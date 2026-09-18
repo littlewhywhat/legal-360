@@ -13,6 +13,9 @@
   --screen-bg: #ffffff;
   --screen-fg: #171717;
   --screen-muted: #6b7280;
+  --font-sans-demo: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+  --font-display: ui-serif, Georgia, "Times New Roman", serif;
+  --font-doc: ui-serif, Georgia, serif;
 }
 
 @theme inline {

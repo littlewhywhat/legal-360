@@ -1,44 +1,25 @@
 "use client";
 
 import type { Choice } from "@demo/runtime";
-
-type Kind = "here" | "shore" | "plateau" | "lake" | "hill";
-
-type Place = {
-  id: string;
-  name: string;
-  kind: Kind;
-  oval: number;
-  cloud: number;
-  dark: boolean;
-  km?: number;
-  favorite?: boolean;
-  you?: boolean;
-  best?: boolean;
-  x?: number;
-  y?: number;
-};
-
-type Hour = { t: string; cloud: number };
+import type { Kind, Night, Origin, Place, Stay, Way } from "@cases/aurora";
 
 type AuroraPayload = {
-  mode: "lock" | "brief" | "map" | "finale";
+  mode: "lock" | "home" | "place" | "analysis" | "geo" | "from" | "trip";
   time?: string;
   date?: string;
   appName?: string;
-  headline?: string;
-  kicker?: string;
-  here?: Place;
-  spots?: Place[];
-  hourly?: Hour[];
-  best?: Place;
-  sheet?: Place;
   place?: Place;
-  eta?: string;
+  nearest?: Place;
+  probable?: Place;
+  spots?: Place[];
+  origin?: Origin;
+  night?: Night | null;
+  suggestion?: string;
+  dates?: string;
 };
 
-function pSee(place: Place): number {
-  return Math.round(place.oval * (1 - place.cloud / 100) * (place.dark ? 1 : 0));
+function pSee(v: { oval: number; cloud: number; dark: boolean }): number {
+  return Math.round(v.oval * (1 - v.cloud / 100) * (v.dark ? 1 : 0));
 }
 
 function tone(p: number): string {
@@ -47,143 +28,195 @@ function tone(p: number): string {
   return "#f9a8d4";
 }
 
-function Icon({ kind, className }: { kind: Kind; className?: string }) {
-  const common = className ?? "h-4 w-4";
-  if (kind === "shore") {
-    return (
-      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 16c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 7 0" />
-        <path d="M3 20c2.5-2 4.5-2 7 0s4.5 2 7 0 4.5-2 7 0" />
-        <path d="M12 4v8" />
-      </svg>
-    );
-  }
-  if (kind === "plateau") {
-    return (
-      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M3 20 9 8l4 7 3-4 5 9H3Z" />
-      </svg>
-    );
-  }
-  if (kind === "lake") {
-    return (
-      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 4c4 4 6 7 6 10a6 6 0 1 1-12 0c0-3 2-6 6-10Z" />
-      </svg>
-    );
-  }
-  if (kind === "hill") {
-    return (
-      <svg viewBox="0 0 24 24" className={common} fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="m4 18 8-12 8 12H4Z" />
-      </svg>
-    );
-  }
+function Photo({ kind, className }: { kind: Kind; className?: string }) {
+  const sky: Record<Kind, string> = {
+    shore:
+      "radial-gradient(ellipse 90% 50% at 58% 8%, rgba(110,231,183,0.55), transparent 58%), radial-gradient(ellipse 40% 30% at 30% 18%, rgba(52,211,153,0.35), transparent 70%), linear-gradient(#071018 0%, #123028 42%, #0b1c18 62%, #08241c 100%)",
+    plateau:
+      "radial-gradient(ellipse 100% 36% at 50% 22%, rgba(167,243,208,0.4), transparent 62%), linear-gradient(#0a1420, #1a3340 48%, #2a3d34 70%, #1b2a22)",
+    lake:
+      "radial-gradient(ellipse 70% 40% at 50% 18%, rgba(74,222,128,0.45), transparent 60%), linear-gradient(#081018, #102830 50%, #0c2428 78%, #071614)",
+    hill:
+      "radial-gradient(ellipse 80% 44% at 62% 10%, rgba(110,231,183,0.38), transparent 58%), linear-gradient(#0c1018, #15202c 40%, #1a2420 100%)",
+  };
   return (
-    <svg viewBox="0 0 24 24" className={common} fill="currentColor">
-      <circle cx="12" cy="12" r="4" />
-    </svg>
-  );
-}
-
-function SkyIcon({ cloud }: { cloud: number }) {
-  if (cloud >= 45) {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#cbd5e1]" fill="currentColor">
-        <path d="M7 18h10a4 4 0 0 0 .4-8 5.5 5.5 0 0 0-10.6 1.5A3.5 3.5 0 0 0 7 18Z" />
-      </svg>
-    );
-  }
-  if (cloud >= 25) {
-    return (
-      <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#e2e8f0]" fill="currentColor">
-        <path d="M15 5a6 6 0 1 0-1 11.9A4.5 4.5 0 1 0 16 9a5.8 5.8 0 0 0-1-4Z" />
-        <path d="M8 18h9a3.5 3.5 0 0 0 0-7 4.8 4.8 0 0 0-7.2-2.2A3.2 3.2 0 0 0 8 18Z" opacity=".85" />
-      </svg>
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="h-6 w-6 text-[#6ee7b7]" fill="currentColor">
-      <path d="M12 3 13.5 8 19 8.2 14.8 11.5 16.5 17 12 13.8 7.5 17 9.2 11.5 5 8.2 10.5 8Z" />
-    </svg>
-  );
-}
-
-function YouPin() {
-  return (
-    <span className="relative flex h-3.5 w-3.5">
-      <span className="absolute inset-0 animate-ping rounded-full bg-[#7dd3fc] opacity-50" />
-      <span className="relative m-auto block h-3.5 w-3.5 rounded-full bg-[#38bdf8] ring-2 ring-white" />
-    </span>
+    <div className={["relative overflow-hidden", className].join(" ")} style={{ background: sky[kind] }}>
+      <div
+        className="pointer-events-none absolute inset-0 opacity-70"
+        style={{
+          backgroundImage:
+            "radial-gradient(#fff 0.6px, transparent 0.7px), radial-gradient(#fff 0.45px, transparent 0.6px)",
+          backgroundPosition: "12px 18px, 40px 36px",
+          backgroundSize: "72px 72px, 46px 46px",
+        }}
+      />
+      {kind === "shore" ? (
+        <>
+          <div className="absolute inset-x-0 bottom-[18%] h-[22%] bg-gradient-to-b from-transparent to-[#0a1f1c]" />
+          <div className="absolute inset-x-0 bottom-0 h-[28%] bg-[#071410]/90" />
+          <div className="absolute bottom-[26%] left-[8%] h-8 w-16 rounded-t-full bg-[#0d1c16]" />
+        </>
+      ) : null}
+      {kind === "plateau" ? (
+        <div className="absolute inset-x-0 bottom-0 h-[34%] bg-[#24352c]" />
+      ) : null}
+      {kind === "lake" ? (
+        <div className="absolute bottom-[8%] left-1/2 h-[38%] w-[70%] -translate-x-1/2 rounded-[50%] bg-[#0a2428] ring-1 ring-[#6ee7b7]/20" />
+      ) : null}
+      {kind === "hill" ? (
+        <div
+          className="absolute bottom-0 left-1/2 h-[46%] w-[80%] -translate-x-1/2 bg-[#12181c]"
+          style={{ clipPath: "polygon(50% 0, 100% 100%, 0 100%)" }}
+        />
+      ) : null}
+    </div>
   );
 }
 
 function MiniMap({
-  here,
+  origin,
+  place,
   spots,
-  onClick,
+  track,
 }: {
-  here?: Place;
+  origin?: Origin;
+  place?: Place;
   spots?: Place[];
-  onClick?: () => void;
+  track?: boolean;
 }) {
-  const inner = (
-    <>
+  const surface = {
+    background:
+      "radial-gradient(ellipse 70% 50% at 60% 30%, rgba(110,231,183,0.22), transparent 62%), linear-gradient(#1c2a24, #141c18)",
+  };
+  return (
+    <div className="relative h-full w-full overflow-hidden" style={surface}>
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute left-[12%] top-[18%] h-[1px] w-[70%] rotate-12 bg-white/10" />
         <div className="absolute left-[8%] top-[58%] h-[1px] w-[80%] -rotate-6 bg-white/10" />
-        <div className="absolute left-[40%] top-[8%] h-[70%] w-[1px] bg-white/10" />
       </div>
-      {spots?.map((spot) => {
-        const p = pSee(spot);
-        return (
-          <span
-            key={spot.id}
-            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
-            style={{
-              left: `${spot.x}%`,
-              top: `${spot.y}%`,
-              width: spot.best ? 10 : 7,
-              height: spot.best ? 10 : 7,
-              background: tone(p),
-              boxShadow: spot.best ? `0 0 12px ${tone(p)}` : undefined,
-            }}
+      {track && origin && place ? (
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <path
+            d={`M ${origin.x} ${origin.y} Q ${(origin.x + place.x) / 2 - 8} ${(origin.y + place.y) / 2 + 6} ${place.x} ${place.y}`}
+            fill="none"
+            stroke="#6ee7b7"
+            strokeWidth="1.4"
+            strokeDasharray="3 2"
+            vectorEffect="non-scaling-stroke"
           />
-        );
-      })}
-      {here ? (
+        </svg>
+      ) : null}
+      {spots?.map((spot) => (
+        <span
+          key={spot.id}
+          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            left: `${spot.x}%`,
+            top: `${spot.y}%`,
+            width: spot.best ? 9 : 6,
+            height: spot.best ? 9 : 6,
+            background: tone(pSee(spot)),
+            boxShadow: spot.id === place?.id ? `0 0 10px ${tone(pSee(spot))}` : undefined,
+          }}
+        />
+      ))}
+      {place && !spots?.some((s) => s.id === place.id) ? (
+        <span
+          className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full"
+          style={{
+            left: `${place.x}%`,
+            top: `${place.y}%`,
+            width: 9,
+            height: 9,
+            background: tone(pSee(place)),
+            boxShadow: `0 0 10px ${tone(pSee(place))}`,
+          }}
+        />
+      ) : null}
+      {origin ? (
         <span
           className="absolute z-10 -translate-x-1/2 -translate-y-1/2"
-          style={{ left: `${here.x}%`, top: `${here.y}%` }}
+          style={{ left: `${origin.x}%`, top: `${origin.y}%` }}
         >
-          <YouPin />
+          <span className="relative flex h-3 w-3">
+            <span className="absolute inset-0 animate-ping rounded-full bg-[#7dd3fc] opacity-50" />
+            <span className="relative m-auto block h-3 w-3 rounded-full bg-[#38bdf8] ring-2 ring-white" />
+          </span>
         </span>
       ) : null}
-    </>
+    </div>
   );
-  const surface = {
-    background:
-      "radial-gradient(ellipse 70% 50% at 60% 30%, rgba(110,231,183,0.28), transparent 62%), linear-gradient(#1c2a24, #141c18)",
-  };
+}
+
+function Badge({ n, onClick }: { n: number; onClick?: () => void }) {
+  const cls =
+    "inline-flex min-w-[2.4rem] items-center justify-center rounded-full px-2 py-0.5 text-[12px] font-semibold tabular-nums text-[#052e1c]";
+  const style = { background: tone(n) };
   if (onClick) {
     return (
-      <button type="button" onClick={onClick} className="relative h-full w-full overflow-hidden" style={surface}>
-        {inner}
+      <button type="button" onClick={onClick} className={cls} style={style}>
+        {n}
       </button>
     );
   }
   return (
-    <div className="relative h-full w-full overflow-hidden" style={surface}>
-      {inner}
+    <span className={cls} style={style}>
+      {n}
+    </span>
+  );
+}
+
+function Factor({ label, value, bar }: { label: string; value: string; bar: number }) {
+  return (
+    <div>
+      <div className="flex items-baseline justify-between text-[12px]">
+        <span className="text-[#9aa89f]">{label}</span>
+        <span className="tabular-nums text-[#e8eee9]">{value}</span>
+      </div>
+      <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/10">
+        <div className="h-full rounded-full bg-[#6ee7b7]" style={{ width: `${Math.max(6, Math.min(100, bar))}%` }} />
+      </div>
     </div>
   );
 }
+
+function Row({ title, meta }: { title: string; meta: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-2 py-1.5">
+      <span className="text-[13px] text-[#f3f6f4]">{title}</span>
+      <span className="shrink-0 text-[11px] tabular-nums text-[#9aa89f]">{meta}</span>
+    </div>
+  );
+}
+
+const ICONS: { label: string; bg: string }[] = [
+  { label: "Фото", bg: "#f59e0b" },
+  { label: "Карты", bg: "#34d399" },
+  { label: "Погода", bg: "#38bdf8" },
+  { label: "Календарь", bg: "#f87171" },
+  { label: "Почта", bg: "#60a5fa" },
+  { label: "Заметки", bg: "#fbbf24" },
+  { label: "Камера", bg: "#94a3b8" },
+  { label: "Часы", bg: "#1e293b" },
+  { label: "Музыка", bg: "#fb7185" },
+  { label: "Книги", bg: "#fb923c" },
+  { label: "Настройки", bg: "#64748b" },
+  { label: "Файлы", bg: "#818cf8" },
+];
+
+const DOCK: { label: string; bg: string }[] = [
+  { label: "Телефон", bg: "#22c55e" },
+  { label: "Safari", bg: "#3b82f6" },
+  { label: "Сообщения", bg: "#4ade80" },
+  { label: "Музыка", bg: "#fb7185" },
+];
 
 export function AuroraScene({
   payload,
   choices,
   onChoice,
   onAdvance,
+  onGo,
 }: {
   payload: AuroraPayload;
   choices?: Choice[];
@@ -191,190 +224,241 @@ export function AuroraScene({
   onAdvance?: () => void;
   onGo?: (id: string) => void;
 }) {
-  const primary = choices?.find((c) => c.variant === "primary");
-  const ghost = choices?.find((c) => c.variant === "ghost");
-
   if (payload.mode === "lock" && payload.place) {
     const p = pSee(payload.place);
     return (
-      <button
-        type="button"
-        onClick={onAdvance}
-        className="relative flex h-full w-full flex-col overflow-hidden px-4 pb-6 pt-6 text-left"
-        style={{
-          background:
-            "radial-gradient(ellipse 80% 50% at 70% 0%, rgba(110,231,183,0.22), transparent 55%), linear-gradient(#1a2420, #121816)",
-        }}
-      >
-        <div className="text-center">
-          <div className="text-[56px] font-semibold leading-none tracking-tight tabular-nums text-[#f3f6f4]">
-            {payload.time}
-          </div>
-          <div className="mt-1 text-[13px] text-[#9aa89f]">{payload.date}</div>
-        </div>
-        <div className="mt-auto flex items-center gap-3 rounded-[1.4rem] bg-[#2a322e]/90 p-2.5 ring-1 ring-white/10">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
-            <Icon kind={payload.place.kind} className="h-5 w-5" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="text-[11px] text-[#9aa89f]">{payload.appName}</div>
-            <div className="text-[15px] font-semibold text-[#f3f6f4]">{payload.place.name}</div>
-          </div>
-          <div className="text-right">
-            <div className="text-[22px] font-semibold tabular-nums" style={{ color: tone(p) }}>
-              {p}
-            </div>
-            <div className="text-[10px] tabular-nums text-[#9aa89f]">{payload.place.km} км</div>
-          </div>
-        </div>
-      </button>
-    );
-  }
-
-  if (payload.mode === "brief") {
-    const hereP = payload.here ? pSee(payload.here) : 0;
-    const bestP = payload.best ? pSee(payload.best) : 0;
-    return (
-      <div
-        className="flex h-full w-full flex-col overflow-y-auto px-4 pb-3 pt-1"
-        style={{
-          background:
-            "radial-gradient(ellipse 90% 40% at 50% -10%, #2a3d34, transparent 60%), #15201c",
-        }}
-      >
-        <h1 className="text-[26px] font-semibold leading-tight tracking-tight text-[#f3f6f4]">
-          {payload.headline}
-        </h1>
-        <p className="mt-1 text-[14px] text-[#c5d0c8]">{payload.kicker}</p>
-        <p className="mt-3 text-[13px] text-[#c5d0c8]">
-          Сейчас <span className="text-[#9fe1c3]">{hereP}</span>
-          {" · "}ясно на{" "}
-          <span className="text-[#9fe1c3]">{payload.best?.name}</span>
-        </p>
-
-        <button
-          type="button"
-          onClick={onAdvance}
-          className="relative mt-3 h-[148px] overflow-hidden rounded-[1.6rem] text-left ring-1 ring-white/10"
-        >
-          <MiniMap here={payload.here} spots={payload.spots} />
-          <span className="absolute left-3 top-3 rounded-full bg-black/35 px-2 py-0.5 text-[11px] text-[#e8eee9] backdrop-blur">
-            ты
-          </span>
-          <span
-            className="absolute bottom-3 right-3 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums text-[#052e1c]"
-            style={{ background: tone(hereP) }}
-          >
-            {hereP}
-          </span>
-        </button>
-
-        <div className="mt-3 rounded-[1.6rem] bg-[#5c5878] px-3 pb-3 pt-2.5">
-          <div className="flex justify-between">
-            {payload.hourly?.map((h) => (
-              <div key={h.t} className="flex w-9 flex-col items-center gap-1">
-                <span className="text-[9px] text-[#d6d3ea]">{h.t}:00</span>
-                <SkyIcon cloud={h.cloud} />
-                <span className="text-[11px] font-semibold tabular-nums text-white">
-                  {100 - h.cloud}
-                </span>
+      <div className="relative h-full w-full overflow-hidden">
+        <Photo kind={payload.place.kind} className="absolute inset-0" />
+        <div className="absolute inset-0 bg-black/25" />
+        <div className="relative flex h-full flex-col px-3 pb-3 pt-9">
+          <div className="grid grid-cols-4 gap-x-3 gap-y-3 px-1 pt-2">
+            {ICONS.map((icon) => (
+              <div key={icon.label} className="flex flex-col items-center gap-1">
+                <span className="h-10 w-10 rounded-[0.85rem] shadow-sm" style={{ background: icon.bg }} />
+                <span className="text-[8px] text-white/90">{icon.label}</span>
               </div>
             ))}
           </div>
-        </div>
-
-        {payload.best ? (
-          <div className="mt-3 rounded-[1.6rem] bg-[#24302c] p-3 ring-1 ring-white/10">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
-                <Icon kind={payload.best.kind} className="h-6 w-6" />
-              </div>
+          <button
+            type="button"
+            onClick={onAdvance}
+            className="mx-1 mt-3 rounded-[1.2rem] bg-white/18 px-3 py-2.5 text-left ring-1 ring-white/25 backdrop-blur-md"
+          >
+            <div className="flex items-start gap-2.5">
+              <span className="mt-0.5 flex h-8 w-8 items-center justify-center rounded-[0.7rem] bg-[#6ee7b7] text-[11px] font-bold text-[#052e1c]">
+                С
+              </span>
               <div className="min-w-0 flex-1">
-                <div className="text-[16px] font-semibold text-[#f3f6f4]">{payload.best.name}</div>
-                <div className="mt-0.5 text-[12px] tabular-nums text-[#9aa89f]">
-                  {payload.eta}
-                  {" · "}
-                  {payload.best.km} км
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-semibold text-white">{payload.appName}</span>
+                  <span className="text-[10px] text-white/70">сейчас</span>
                 </div>
-              </div>
-              <div className="text-[28px] font-semibold tabular-nums" style={{ color: tone(bestP) }}>
-                {bestP}
+                <div className="mt-0.5 text-[13px] font-semibold text-white">
+                  {payload.place.name} · {p}
+                </div>
+                <div className="text-[11px] text-white/80">Ясно и темно. Можно ехать.</div>
               </div>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              {ghost ? (
-                <button
-                  type="button"
-                  onClick={() => onChoice(ghost)}
-                  className="rounded-full bg-[#3a4540] py-2.5 text-[13px] font-medium text-[#e8eee9]"
-                >
-                  {ghost.label}
-                </button>
-              ) : null}
-              {primary ? (
-                <button
-                  type="button"
-                  onClick={() => onChoice(primary)}
-                  className="rounded-full bg-[#e8eee9] py-2.5 text-[13px] font-semibold text-[#15201c]"
-                >
-                  {primary.label}
-                </button>
-              ) : null}
-            </div>
+          </button>
+          <div className="mt-auto flex justify-center gap-3 rounded-[1.4rem] bg-black/25 px-3 py-2.5 backdrop-blur">
+            {DOCK.map((icon) => (
+              <span key={icon.label} className="h-10 w-10 rounded-[0.85rem]" style={{ background: icon.bg }} />
+            ))}
           </div>
-        ) : null}
+        </div>
       </div>
     );
   }
 
-  if (payload.mode === "map") {
-    const sheet = payload.sheet;
-    const sheetP = sheet ? pSee(sheet) : 0;
+  if (payload.mode === "home") {
+    const nearest = payload.nearest;
+    const probable = payload.probable;
     return (
-      <div className="relative h-full w-full bg-[#141c18]">
-        <MiniMap here={payload.here} spots={payload.spots} />
-        <div className="pointer-events-none absolute left-3 top-3 flex items-center gap-2">
-          <span className="rounded-full bg-black/40 px-2 py-1 text-[11px] text-[#e8eee9] backdrop-blur">
-            <span className="mr-1 inline-block h-2 w-2 rounded-full bg-[#38bdf8]" />
-            ты
-          </span>
-        </div>
-        {payload.spots?.map((spot) => {
-          if (!spot.best) return null;
-          const p = pSee(spot);
-          return (
+      <div className="flex h-full w-full flex-col bg-[#121816]">
+        <div className="grid grid-cols-2 gap-px bg-white/10">
+          {nearest ? (
             <button
-              key={spot.id}
               type="button"
-              onClick={onAdvance}
-              className="absolute z-20 -translate-x-1/2 -translate-y-[120%] rounded-full px-2 py-1 text-[11px] font-semibold tabular-nums text-[#052e1c]"
-              style={{
-                left: `${spot.x}%`,
-                top: `${spot.y}%`,
-                background: tone(p),
-              }}
+              onClick={() => onGo?.(`s3-${nearest.id}`)}
+              className="bg-[#15201c] px-3 py-2 text-left"
             >
-              {spot.name} {p}
+              <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">ближайшее</div>
+              <div className="mt-0.5 flex items-baseline justify-between gap-1">
+                <span className="text-[13px] font-semibold text-[#f3f6f4]">{nearest.name}</span>
+                <span className="text-[11px] tabular-nums text-[#9aa89f]">{nearest.km} км</span>
+              </div>
+              <div className="text-[16px] font-semibold tabular-nums" style={{ color: tone(pSee(nearest)) }}>
+                {pSee(nearest)}
+              </div>
             </button>
-          );
-        })}
-        {sheet ? (
+          ) : null}
+          {probable ? (
+            <button
+              type="button"
+              onClick={() => onGo?.(`s3-${probable.id}`)}
+              className="bg-[#15201c] px-3 py-2 text-left"
+            >
+              <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">вероятнее</div>
+              <div className="mt-0.5 flex items-baseline justify-between gap-1">
+                <span className="text-[13px] font-semibold text-[#f3f6f4]">{probable.name}</span>
+                <span className="text-[11px] tabular-nums text-[#9aa89f]">{probable.km} км</span>
+              </div>
+              <div className="text-[16px] font-semibold tabular-nums" style={{ color: tone(pSee(probable)) }}>
+                {pSee(probable)}
+              </div>
+            </button>
+          ) : null}
+        </div>
+        <div className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-3 py-3">
+          {payload.spots?.map((spot) => {
+            const n = pSee(spot);
+            return (
+              <button
+                key={spot.id}
+                type="button"
+                onClick={() => onGo?.(`s3-${spot.id}`)}
+                className="relative block w-full overflow-hidden rounded-[1.25rem] text-left ring-1 ring-white/10"
+              >
+                <Photo kind={spot.kind} className="h-[132px] w-full" />
+                <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-black/70 to-transparent px-3 pb-2 pt-8">
+                  <span className="text-[16px] font-semibold text-white">{spot.name}</span>
+                  <span className="text-[11px] tabular-nums text-white/80">{spot.km} км</span>
+                </div>
+                <span className="absolute right-2 top-2">
+                  <Badge n={n} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
+  if (payload.mode === "place" && payload.place) {
+    const place = payload.place;
+    const n = pSee(place);
+    return (
+      <div className="flex h-full w-full flex-col bg-[#121816]">
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <Photo kind={place.kind} className="h-36 w-full" />
+          <div className="px-3 pb-3 pt-3">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h1 className="text-[22px] font-semibold leading-none text-[#f3f6f4]">{place.name}</h1>
+                <p className="mt-1 text-[12px] tabular-nums text-[#9aa89f]">{place.km} км · место, не город</p>
+              </div>
+              <Badge n={n} onClick={() => onGo?.(`s4-${place.id}`)} />
+            </div>
+            <div className="mt-3 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">когда было</div>
+            <div className="mt-1.5 flex gap-1.5 overflow-x-auto pb-1">
+              {place.nights.map((night) => (
+                <button
+                  key={night.id}
+                  type="button"
+                  onClick={() => onGo?.(`s4-${place.id}-${night.id}`)}
+                  className="shrink-0 rounded-full bg-[#24302c] px-2.5 py-1 text-[11px] text-[#e8eee9] ring-1 ring-white/10"
+                >
+                  {night.label}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 h-[92px] overflow-hidden rounded-[1.1rem] ring-1 ring-white/10">
+              <MiniMap origin={payload.origin} place={place} />
+            </div>
+            <div className="mt-3">
+              <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">отзывы</div>
+              {place.reviews.map((review) => (
+                <p key={review.who} className="mt-1.5 text-[12px] leading-snug text-[#c5d0c8]">
+                  <span className="text-[#9fe1c3]">{review.who}.</span> {review.text}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+        <div className="shrink-0 px-3 pb-3 pt-1">
           <button
             type="button"
-            onClick={onAdvance}
-            className="absolute inset-x-3 bottom-3 z-30 flex items-center gap-3 rounded-[1.4rem] bg-[#24302c]/95 p-3 text-left ring-1 ring-white/10"
+            onClick={() => onGo?.(`s5-${place.id}`)}
+            className="w-full rounded-full bg-[#e8eee9] py-2.5 text-[13px] font-semibold text-[#15201c]"
           >
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
-              <Icon kind={sheet.kind} className="h-5 w-5" />
+            Маршрут
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (payload.mode === "analysis" && payload.place) {
+    const src = payload.night ?? payload.place;
+    const n = pSee(src);
+    const clear = 100 - src.cloud;
+    return (
+      <div className="flex h-full w-full flex-col bg-[#121816] px-3 pb-3 pt-2">
+        <button type="button" onClick={onAdvance} className="self-start text-[12px] text-[#9fe1c3]">
+          ← {payload.place.name}
+        </button>
+        <div className="mt-2 flex items-end justify-between">
+          <div>
+            <div className="text-[11px] text-[#9aa89f]">
+              {payload.night ? payload.night.label : "ближайшая ночь"}
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[15px] font-semibold text-[#f3f6f4]">{sheet.name}</div>
-              <div className="text-[11px] tabular-nums text-[#9aa89f]">
-                {payload.eta} · {sheet.km} км
-              </div>
+            <div className="text-[20px] font-semibold text-[#f3f6f4]">P_see</div>
+          </div>
+          <div className="text-[40px] font-semibold leading-none tabular-nums" style={{ color: tone(n) }}>
+            {n}
+          </div>
+        </div>
+        <p className="mt-2 text-[12px] text-[#c5d0c8]">овал × ясность × темнота</p>
+        <div className="mt-4 space-y-3">
+          <Factor label="Овал NOAA/OVATION" value={`${src.oval}`} bar={src.oval} />
+          <Factor label="Ясность" value={`${clear}%`} bar={clear} />
+          <Factor label="Темнота" value={src.dark ? "ночь" : "светло"} bar={src.dark ? 100 : 8} />
+          <Factor label="История" value={`${payload.place.nights.length} ночи видели`} bar={58} />
+        </div>
+        <p className="mt-4 text-[11px] leading-snug text-[#9aa89f]">
+          Скрипт: овал накрывает место, нет низкой облачности, уже темно. Не Kp и не Bz.
+        </p>
+      </div>
+    );
+  }
+
+  if ((payload.mode === "geo" || payload.mode === "from") && payload.place) {
+    const share = choices?.find((c) => c.variant === "primary");
+    const deny = choices?.find((c) => c.variant === "ghost");
+    const fromMode = payload.mode === "from";
+    return (
+      <div className="flex h-full w-full flex-col bg-[#121816] px-3 pb-3 pt-3">
+        <h1 className="text-[20px] font-semibold leading-tight text-[#f3f6f4]">Откуда ехать</h1>
+        <p className="mt-1 text-[12px] text-[#9aa89f]">
+          Гео только для маршрута. Отказ — точка вручную. Дальше всё от неё.
+        </p>
+        {!fromMode && share ? (
+          <button
+            type="button"
+            onClick={() => onChoice(share)}
+            className="mt-5 w-full rounded-full bg-[#e8eee9] py-2.5 text-[13px] font-semibold text-[#15201c]"
+          >
+            {share.label} гео
+          </button>
+        ) : null}
+        {!fromMode && deny ? (
+          <button
+            type="button"
+            onClick={() => onChoice(deny)}
+            className="mt-2 w-full rounded-full bg-[#24302c] py-2.5 text-[13px] text-[#e8eee9]"
+          >
+            {deny.label}
+          </button>
+        ) : null}
+        {fromMode ? (
+          <button type="button" onClick={onAdvance} className="mt-5 w-full text-left">
+            <div className="rounded-[1.1rem] bg-[#24302c] px-3 py-3 ring-1 ring-[#6ee7b7]/40">
+              <div className="text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">откуда</div>
+              <div className="mt-1 text-[16px] text-[#f3f6f4]">{payload.suggestion}</div>
             </div>
-            <div className="text-[24px] font-semibold tabular-nums" style={{ color: tone(sheetP) }}>
-              {sheetP}
+            <div className="mt-3 w-full rounded-full bg-[#e8eee9] py-2.5 text-center text-[13px] font-semibold text-[#15201c]">
+              Дальше
             </div>
           </button>
         ) : null}
@@ -382,35 +466,40 @@ export function AuroraScene({
     );
   }
 
-  const finale = payload.place;
-  const finaleP = finale ? pSee(finale) : 0;
+  const place = payload.place;
+  const origin = payload.origin;
+  if (!place || !origin) return null;
+  const ways: Way[] = origin.id === "spb" ? place.waysSpb : place.waysHere;
+  const stays: Stay[] = place.hotels;
   return (
-    <button
-      type="button"
-      onClick={onAdvance}
-      className="flex h-full w-full flex-col justify-end px-4 pb-8 text-left"
-      style={{
-        background: `radial-gradient(ellipse 80% 50% at 50% 20%, ${tone(finaleP)}33, #15201c 70%)`,
-      }}
-    >
-      <div className="rounded-[1.6rem] bg-[#24302c] p-4 ring-1 ring-white/10">
-        {finale ? (
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#6ee7b7]/15 text-[#6ee7b7]">
-              <Icon kind={finale.kind} className="h-6 w-6" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-[18px] font-semibold text-[#f3f6f4]">{finale.name}</div>
-              <div className="text-[12px] tabular-nums text-[#9aa89f]">{payload.eta}</div>
-            </div>
-            <div className="text-[32px] font-semibold tabular-nums" style={{ color: tone(finaleP) }}>
-              {finaleP}
-            </div>
-          </div>
-        ) : null}
-        <div className="mt-4 rounded-full bg-[#e8eee9] py-2.5 text-center text-[13px] font-semibold text-[#15201c]">
-          Маршрут
+    <button type="button" onClick={onAdvance} className="flex h-full w-full flex-col bg-[#121816] text-left">
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 pt-2">
+        <div className="text-[11px] text-[#9aa89f]">как оказаться</div>
+        <h1 className="text-[20px] font-semibold text-[#f3f6f4]">{place.name}</h1>
+        <div className="mt-1 text-[12px] text-[#c5d0c8]">
+          {origin.name} → {place.name} · {payload.dates}
         </div>
+        <div className="mt-3 h-[100px] overflow-hidden rounded-[1.1rem] ring-1 ring-white/10">
+          <MiniMap origin={origin} place={place} track />
+        </div>
+        <div className="mt-3 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">способы</div>
+        {ways.map((way) => (
+          <div key={way.title} className="py-1.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-[13px] text-[#f3f6f4]">{way.title}</span>
+              <span className="shrink-0 text-[11px] tabular-nums text-[#9aa89f]">{way.duration}</span>
+            </div>
+            <div className="text-[11px] text-[#9aa89f]">{way.detail}</div>
+          </div>
+        ))}
+        <div className="mt-2 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">отели рядом</div>
+        {stays.map((stay) => (
+          <Row key={stay.name} title={stay.name} meta={stay.meta} />
+        ))}
+        <div className="mt-2 text-[9px] uppercase tracking-[0.14em] text-[#9aa89f]">еда рядом</div>
+        {place.food.map((item) => (
+          <Row key={item.name} title={item.name} meta={item.meta} />
+        ))}
       </div>
     </button>
   );

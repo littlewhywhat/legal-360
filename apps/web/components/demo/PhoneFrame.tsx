@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 type PhoneFrameProps = {
   deviceLabel: string;
   children: ReactNode;
-  chrome?: "light" | "dark";
+  chrome?: "light" | "dark" | "overlay";
   clock?: string;
 };
 
@@ -15,7 +15,8 @@ export function PhoneFrame({
   chrome = "light",
   clock = "9:41",
 }: PhoneFrameProps) {
-  const dark = chrome === "dark";
+  const overlay = chrome === "overlay";
+  const dark = chrome === "dark" || overlay;
   return (
     <div className="flex w-full max-w-[320px] flex-col items-center gap-3">
       <div className="text-[11px] font-medium uppercase tracking-[0.18em] text-[var(--stage-muted)]">
@@ -26,15 +27,21 @@ export function PhoneFrame({
         <div
           className={[
             "phone-screen relative flex h-[560px] w-full min-w-0 flex-col overflow-hidden rounded-[1.5rem]",
-            dark
-              ? "bg-[#121816] text-[#e8eee9]"
-              : "bg-[var(--screen-bg)] text-[var(--screen-fg)]",
+            overlay
+              ? "bg-black text-white"
+              : dark
+                ? "bg-[#121816] text-[#e8eee9]"
+                : "bg-[var(--screen-bg)] text-[var(--screen-fg)]",
           ].join(" ")}
         >
           <div
             className={[
-              "flex shrink-0 items-center justify-between px-5 pb-1 pt-3 text-[10px] font-medium",
-              dark ? "text-[#9aa89f]" : "text-[var(--screen-muted)]",
+              "flex items-center justify-between px-5 pb-1 pt-3 text-[10px] font-medium",
+              overlay
+                ? "pointer-events-none absolute inset-x-0 top-0 z-10 text-white"
+                : "shrink-0",
+              !overlay && dark ? "text-[#9aa89f]" : "",
+              !overlay && !dark ? "text-[var(--screen-muted)]" : "",
             ].join(" ")}
           >
             <span>{clock}</span>

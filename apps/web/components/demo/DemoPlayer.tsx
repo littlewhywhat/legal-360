@@ -88,7 +88,13 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
       <PhoneFrame
         deviceLabel={deviceLabel(scene)}
-        chrome={scene.app === "aurora" ? "dark" : "light"}
+        chrome={
+          scene.app === "aurora"
+            ? (scene.payload as { mode?: string }).mode === "lock"
+              ? "overlay"
+              : "dark"
+            : "light"
+        }
         clock={scene.app === "aurora" ? "21:14" : "9:41"}
       >
         {scene.app === "email" ? (

@@ -1,8 +1,8 @@
 # Aurora — to-be (brief)
 
-Now-brief: headline, **map with you on it**, hourly sky, one recommended spot.
+Job: inspire a trip, then show how to actually be there. Observation **places**, not cities. Number = **P_see** (oval × clarity × darkness). Scripted prototype, no live NOAA.
 
-Prototype only — scripted places, no live NOAA.
+Geo is not asked on open. Only on **Маршрут**. Deny → «откуда». Everything after that origin.
 
 Related: [as-is today](./as-is.md)
 
@@ -13,15 +13,18 @@ sequenceDiagram
   participant App as Aurora
   participant W as Watcher
 
-  App->>W: Push — best spot
-  W->>App: Evening brief (map + you, hourly, route card)
-  W->>App: Full map, still you + nearby spots
-  W->>W: Go
+  App->>W: Push on home screen — Сияния
+  W->>App: Home status + photo cards
+  W->>App: Place (photo, badge, dates, reviews)
+  W->>App: Analysis of this night / now
+  W->>App: Route → share geo or from-city
+  App-->>W: Trip — ways, hotels, food, track
 ```
 
 ## Happy path
 
-1. Lock banner: spot + number.
-2. Brief: map with current position, hourly clouds, «Ехать / Остаться».
-3. Map: you (pulse) + spots as dots.
-4. Go / replay.
+1. Lock: wallpaper + icons, banner «Сияния».
+2. Home: nearest + most probable, photo cards of places.
+3. Place: photo, P_see badge, night-date strip, map pin, reviews, Маршрут.
+4. Analysis: badge or date → oval, clouds, darkness, history. Not a Kp dashboard.
+5. Location gate, then trip from that point.
