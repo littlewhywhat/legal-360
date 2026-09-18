@@ -28,77 +28,79 @@ const landingSteps = [
   },
 ];
 
-const weekDays = [
-  { id: "sun", label: "S", name: "Sunday", squares: [] },
-  {
-    id: "mon",
-    label: "M",
-    name: "Monday",
-    squares: [{ tone: "teal" }, { tone: "teal" }, { tone: "violet" }],
-  },
-  {
-    id: "tue",
-    label: "T",
-    name: "Tuesday",
-    squares: [{ tone: "teal" }, { tone: "amber" }, { tone: "teal" }, { tone: "violet" }],
-  },
-  {
-    id: "wed",
-    label: "W",
-    name: "Wednesday",
-    highlight: true,
-    squares: [
-      { tone: "teal" },
-      { tone: "teal" },
-      { tone: "teal" },
-      { tone: "teal" },
-      { tone: "violet" },
-      { tone: "violet" },
-      { tone: "amber" },
-    ],
-    detail: {
-      title: "Wednesday",
-      count: 7,
-      groups: [
-        {
-          goal: "Launch my side project",
-          task: "Build landing page",
-          tone: "teal",
-          items: [
-            "Write hero copy",
-            "Add CTA",
-            "Check breakpoints",
-            "Fix nav wrap",
-          ],
-        },
-        {
-          goal: "Learn Spanish",
-          task: "Vocab",
-          tone: "violet",
-          items: ["Review 5 cards", "Say 3 sentences out loud"],
-        },
-        {
-          goal: "Get fit",
-          task: "Walk",
-          tone: "amber",
-          items: ["10-minute walk"],
-        },
+const DAY = ["S", "M", "T", "W", "T", "F", "S"] as const;
+const DAY_NAME = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+const wedDetail = {
+  title: "Wednesday",
+  count: 7,
+  groups: [
+    {
+      goal: "Launch my side project",
+      task: "Build landing page",
+      tone: "teal" as const,
+      items: [
+        "Write hero copy",
+        "Add CTA",
+        "Check breakpoints",
+        "Fix nav wrap",
       ],
     },
-  },
-  {
-    id: "thu",
-    label: "T",
-    name: "Thursday",
-    squares: [{ tone: "teal" }, { tone: "teal" }],
-  },
-  {
-    id: "fri",
-    label: "F",
-    name: "Friday",
-    squares: [{ tone: "violet" }, { tone: "teal" }, { tone: "amber" }],
-  },
-  { id: "sat", label: "S", name: "Saturday", squares: [] },
+    {
+      goal: "Learn Spanish",
+      task: "Vocab",
+      tone: "violet" as const,
+      items: ["Review 5 cards", "Say 3 sentences out loud"],
+    },
+    {
+      goal: "Get fit",
+      task: "Walk",
+      tone: "amber" as const,
+      items: ["10-minute walk"],
+    },
+  ],
+};
+
+function weekDays(
+  weekId: string,
+  counts: number[],
+  highlightId?: string,
+): {
+  id: string;
+  label: string;
+  name: string;
+  count: number;
+  detail?: typeof wedDetail;
+}[] {
+  return counts.map((count, i) => {
+    const id = `${weekId}-${DAY_NAME[i].slice(0, 3).toLowerCase()}`;
+    const isWed = highlightId === id || (highlightId === "wed" && i === 3);
+    return {
+      id,
+      label: DAY[i],
+      name: DAY_NAME[i],
+      count,
+      ...(isWed && count > 0 ? { detail: wedDetail } : {}),
+    };
+  });
+}
+
+const last7 = weekDays("w37", [0, 3, 4, 7, 2, 3, 0], "w37-wed");
+
+const calendarWeeks = [
+  { id: "w33", month: "Aug", days: weekDays("w33", [0, 1, 0, 2, 1, 0, 0]) },
+  { id: "w34", month: "Aug", days: weekDays("w34", [0, 2, 1, 1, 0, 3, 0]) },
+  { id: "w35", month: "Aug", days: weekDays("w35", [1, 0, 2, 3, 2, 1, 0]) },
+  { id: "w36", month: "Sep", days: weekDays("w36", [0, 1, 3, 2, 4, 2, 1]) },
+  { id: "w37", month: "Sep", days: last7 },
 ];
 
 export const scenes: Scene[] = [
@@ -109,13 +111,14 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goals",
-    hint: "Start Focus — pick a tiny action, not a whole project",
+    hint: "Start Focus — or tap the week strip for History",
     next: "s2-quiz-goal",
     payload: {
       mode: "home",
       weekCount: 12,
       goals: goalsBefore,
-      historyEnabled: false,
+      last7,
+      historyScene: "s8-history",
     },
   },
   {
@@ -229,13 +232,14 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goals",
-    hint: "Same goal — more squares filled. Open History.",
+    hint: "Same goal — more squares filled. Tap the week strip.",
     next: "s8-history",
     payload: {
       mode: "home",
       weekCount: 16,
       goals: goalsAfter,
-      historyEnabled: true,
+      last7,
+      historyScene: "s8-history",
       startEnabled: false,
     },
   },
@@ -246,18 +250,12 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "History",
-    hint: "Each day is many squares. Tap Wednesday, then Insights.",
-    next: "s9-insights",
+    hint: "One square per day. Tap Wednesday for that day's stats.",
     payload: {
       mode: "history",
       homeScene: "s7-home-after",
-      weeks: [
-        { id: "w34", label: "W34" },
-        { id: "w35", label: "W35" },
-        { id: "w36", label: "W36" },
-        { id: "w37", label: "W37", active: true },
-      ],
-      weekDays,
+      insightsScene: "s9-insights",
+      calendarWeeks,
     },
   },
   {
