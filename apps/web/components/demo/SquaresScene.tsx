@@ -518,13 +518,55 @@ function OutlineEditList({
   );
 }
 
+function ancestorIds(items: OutlineItem[], id: string): string[] {
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx < 0) return [];
+  const found: string[] = [];
+  let depth = items[idx].depth;
+  for (let i = idx - 1; i >= 0 && depth > 0; i--) {
+    if (items[i].depth < depth) {
+      found.push(items[i].id);
+      depth = items[i].depth;
+    }
+  }
+  return found;
+}
+
+function descendantIds(items: OutlineItem[], id: string): string[] {
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx < 0) return [];
+  const base = items[idx].depth;
+  const found: string[] = [];
+  for (let i = idx + 1; i < items.length; i++) {
+    if (items[i].depth <= base) break;
+    found.push(items[i].id);
+  }
+  return found;
+}
+
+function toggleBranch(
+  items: OutlineItem[],
+  selected: Record<string, boolean>,
+  id: string,
+): Record<string, boolean> {
+  const next = { ...selected };
+  if (!selected[id]) {
+    next[id] = true;
+    for (const a of ancestorIds(items, id)) next[a] = true;
+  } else {
+    next[id] = false;
+    for (const d of descendantIds(items, id)) next[d] = false;
+  }
+  return next;
+}
+
 function PickTasks({
   title,
   items,
   selected,
   hideDone,
   onToggleHide,
-  onToggle,
+  onChange,
   onBack,
   onConfirm,
 }: {
@@ -533,7 +575,7 @@ function PickTasks({
   selected: Record<string, boolean>;
   hideDone: boolean;
   onToggleHide: () => void;
-  onToggle: (id: string) => void;
+  onChange: (selected: Record<string, boolean>) => void;
   onBack: () => void;
   onConfirm: () => void;
 }) {
@@ -572,7 +614,7 @@ function PickTasks({
                 type="button"
                 disabled={done}
                 aria-pressed={on}
-                onClick={() => onToggle(s.id)}
+                onClick={() => onChange(toggleBranch(items, selected, s.id))}
                 className={[
                   "-mx-3.5 flex w-[calc(100%+1.75rem)] items-center py-2.5 pr-3.5 text-left text-[13px] leading-snug",
                   on && !done ? "bg-[#5eead4]/15 text-[#5eead4]" : "",
@@ -670,9 +712,7 @@ function GoalOutline({
         selected={selected}
         hideDone={hideDone}
         onToggleHide={() => setHideDone((v) => !v)}
-        onToggle={(id) =>
-          setSelected((prev) => ({ ...prev, [id]: !prev[id] }))
-        }
+        onChange={setSelected}
         onBack={() => {
           setPicking(false);
           setSelected({});
@@ -938,9 +978,7 @@ function FocusMode({
         selected={selected}
         hideDone={hideDone}
         onToggleHide={() => setHideDone((v) => !v)}
-        onToggle={(id) =>
-          setSelected((prev) => ({ ...prev, [id]: !prev[id] }))
-        }
+        onChange={setSelected}
         onBack={() => setAdjusting(false)}
         onConfirm={() => {
           const picked = outline
