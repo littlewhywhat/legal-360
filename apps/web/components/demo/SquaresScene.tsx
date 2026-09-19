@@ -432,6 +432,92 @@ function HomeView({
   );
 }
 
+function OutlineEditList({
+  items,
+  hideDone,
+  onChange,
+  onAdd,
+  animateAdded = false,
+  phase = "done",
+}: {
+  items: OutlineItem[];
+  hideDone: boolean;
+  onChange: (items: OutlineItem[]) => void;
+  onAdd: () => void;
+  animateAdded?: boolean;
+  phase?: "in" | "flash" | "done";
+}) {
+  const visible = hideDone ? items.filter((i) => !i.done) : items;
+  return (
+    <>
+      <ul className="mt-3">
+        {visible.map((s) => {
+          const done = !!s.done;
+          const added = animateAdded && !!s.added;
+          return (
+            <li key={s.id} className="border-b border-white/5">
+              <div
+                className={[
+                  "-mx-3.5 flex items-center gap-2 py-2 pr-3.5 transition duration-500",
+                  added && phase === "in" ? "translate-y-1 opacity-0" : "",
+                  added && phase === "flash" ? "bg-[#5eead4]/15" : "",
+                ].join(" ")}
+                style={{ paddingLeft: 14 + s.depth * 16 }}
+              >
+                <button
+                  type="button"
+                  aria-label={done ? `Reopen ${s.label}` : `Complete ${s.label}`}
+                  aria-pressed={done}
+                  onClick={() =>
+                    onChange(
+                      items.map((i) =>
+                        i.id === s.id ? { ...i, done: !i.done } : i,
+                      ),
+                    )
+                  }
+                  className="shrink-0"
+                >
+                  <span
+                    className="inline-block h-4 w-4 rounded-[3px]"
+                    style={{
+                      background: done ? TONE.teal : "transparent",
+                      boxShadow: `inset 0 0 0 1px ${done ? TONE.teal : "rgba(94,234,212,0.5)"}`,
+                    }}
+                  />
+                </button>
+                <input
+                  value={s.label}
+                  disabled={done}
+                  aria-label={`Edit ${s.label}`}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    onChange(
+                      items.map((i) =>
+                        i.id === s.id ? { ...i, label: v } : i,
+                      ),
+                    );
+                  }}
+                  className={[
+                    "min-w-0 flex-1 bg-transparent py-0.5 text-[13px] leading-snug outline-none",
+                    done ? "text-[#6b7280] line-through" : "",
+                  ].join(" ")}
+                />
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+      <button
+        type="button"
+        onClick={onAdd}
+        className="w-full px-2 py-2.5 text-left text-[13px] text-[#6b7280]"
+      >
+        List item
+      </button>
+    </>
+  );
+}
+
 function PickTasks({
   title,
   items,
@@ -539,7 +625,6 @@ function GoalOutline({
   const [phase, setPhase] = useState<"in" | "flash" | "done">(
     animateAdded ? "in" : "done",
   );
-  const visible = hideDone ? items.filter((i) => !i.done) : items;
   const canPick = items.some((i) => !i.done);
 
   useEffect(() => {
@@ -622,70 +707,17 @@ function GoalOutline({
       <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
         {title}
       </p>
-      <ul className="mt-3">
-        {visible.map((s) => {
-          const done = !!s.done;
-          const added = animateAdded && !!s.added;
-          return (
-            <li key={s.id} className="border-b border-white/5">
-              <div
-                className={[
-                  "-mx-3.5 flex items-center gap-2 py-2 pr-3.5 transition duration-500",
-                  added && phase === "in" ? "translate-y-1 opacity-0" : "",
-                  added && phase === "flash" ? "bg-[#5eead4]/15" : "",
-                ].join(" ")}
-                style={{ paddingLeft: 14 + s.depth * 16 }}
-              >
-                <button
-                  type="button"
-                  aria-label={done ? `Reopen ${s.label}` : `Complete ${s.label}`}
-                  aria-pressed={done}
-                  onClick={() => {
-                    const next = items.map((i) =>
-                      i.id === s.id ? { ...i, done: !i.done } : i,
-                    );
-                    setItems(next);
-                    onItems?.(next);
-                  }}
-                  className="shrink-0"
-                >
-                  <span
-                    className="inline-block h-4 w-4 rounded-[3px]"
-                    style={{
-                      background: done ? TONE.teal : "transparent",
-                      boxShadow: `inset 0 0 0 1px ${done ? TONE.teal : "rgba(94,234,212,0.5)"}`,
-                    }}
-                  />
-                </button>
-                <input
-                  value={s.label}
-                  disabled={done}
-                  aria-label={`Edit ${s.label}`}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    const next = items.map((i) =>
-                      i.id === s.id ? { ...i, label: v } : i,
-                    );
-                    setItems(next);
-                    onItems?.(next);
-                  }}
-                  className={[
-                    "min-w-0 flex-1 bg-transparent py-0.5 text-[13px] leading-snug outline-none",
-                    done ? "text-[#6b7280] line-through" : "",
-                  ].join(" ")}
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <button
-        type="button"
-        onClick={addRow}
-        className="w-full px-2 py-2.5 text-left text-[13px] text-[#6b7280]"
-      >
-        List item
-      </button>
+      <OutlineEditList
+        items={items}
+        hideDone={hideDone}
+        onChange={(next) => {
+          setItems(next);
+          onItems?.(next);
+        }}
+        onAdd={addRow}
+        animateAdded={animateAdded}
+        phase={phase}
+      />
       <button
         type="button"
         disabled={!canPick}
@@ -884,14 +916,19 @@ function FocusMode({
   payload: SquaresPayload;
   onFinish: () => void;
 }) {
-  const extras = ["Check breakpoints", "Fix nav wrap"];
   const outline = payload.outline ?? [];
-  const [steps, setSteps] = useState<StepItem[]>(() => payload.steps ?? []);
-  const [filled, setFilled] = useState<Record<string, boolean>>({});
+  const [items, setItems] = useState<OutlineItem[]>(() =>
+    (payload.steps ?? []).map((s) => ({
+      id: s.id,
+      label: s.label,
+      depth: s.depth ?? 0,
+      done: s.done,
+      added: s.added,
+    })),
+  );
   const [adjusting, setAdjusting] = useState(false);
   const [hideDone, setHideDone] = useState(true);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const extraIdx = steps.filter((s) => s.added).length;
 
   if (adjusting) {
     return (
@@ -908,13 +945,16 @@ function FocusMode({
         onConfirm={() => {
           const picked = outline
             .filter((i) => selected[i.id] && !i.done)
-            .map((i) => ({
-              id: i.id,
-              label: i.label,
-              depth: i.depth,
-            }));
-          const extraRows = steps.filter((s) => s.added);
-          setSteps([...picked, ...extraRows]);
+            .map((i) => {
+              const prev = items.find((row) => row.id === i.id);
+              return {
+                ...i,
+                done: prev?.done,
+                added: prev?.added,
+              };
+            });
+          const extraRows = items.filter((s) => s.added);
+          setItems([...picked, ...extraRows.filter((e) => !picked.some((p) => p.id === e.id))]);
           setAdjusting(false);
         }}
       />
@@ -923,98 +963,58 @@ function FocusMode({
 
   return (
     <Shell>
-      <div className="flex items-baseline justify-between pt-1">
+      <div className="flex items-center justify-between gap-2 pt-1">
         <p className="text-[11px] uppercase tracking-[0.16em] text-[#5eead4]">
           Focus
         </p>
-        <p className="truncate pl-2 text-[11px] text-[#9aa0a6]">
-          {payload.goalName}
-        </p>
+        <button
+          type="button"
+          onClick={() => setHideDone((v) => !v)}
+          className="text-[11px] text-[#9aa0a6]"
+        >
+          {hideDone ? "Show completed" : "Hide completed"}
+        </button>
       </div>
       <button
         type="button"
         aria-label="Timer done"
         onClick={onFinish}
-        className="mt-3 w-full text-center font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums tracking-tight"
+        className="mt-2 w-full text-center font-[family-name:var(--font-display)] text-[40px] leading-none tabular-nums tracking-tight"
       >
         {payload.timer}
       </button>
-      <ul className="mt-3 space-y-1.5">
-        {steps.map((s) => {
-          const on = !!filled[s.id];
-          return (
-            <li
-              key={s.id}
-              className={[
-                "rounded-xl bg-[#1c1c21] ring-1",
-                s.added ? "ring-[#5eead4]/35" : "ring-white/5",
-              ].join(" ")}
-              style={{ marginLeft: (s.depth ?? 0) * 12 }}
-            >
-              <div className="flex items-center gap-2 px-2.5 py-2">
-                <button
-                  type="button"
-                  aria-label={s.label}
-                  onClick={() =>
-                    setFilled((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
-                  }
-                  className="shrink-0"
-                >
-                  <span
-                    className="inline-block h-4 w-4 rounded-[3px] transition-colors"
-                    style={{ background: on ? TONE.teal : "#2a2a32" }}
-                  />
-                </button>
-                <input
-                  value={s.label}
-                  aria-label={`Rename ${s.label}`}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    setSteps((prev) =>
-                      prev.map((row) =>
-                        row.id === s.id ? { ...row, label: v } : row,
-                      ),
-                    );
-                  }}
-                  className={[
-                    "min-w-0 flex-1 bg-transparent text-[13px] leading-snug outline-none",
-                    on ? "text-[#9aa0a6] line-through" : "",
-                  ].join(" ")}
-                />
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      {extraIdx < extras.length ? (
-        <button
-          type="button"
-          onClick={() => {
-            const label = extras[extraIdx];
-            setSteps((prev) => [
-              ...prev,
-              { id: `add-${extraIdx}`, label, added: true, depth: 1 },
-            ]);
-          }}
-          className="mt-1 w-full px-2.5 py-2.5 text-left text-[13px] text-[#6b7280]"
-        >
-          List item
-        </button>
-      ) : (
-        <p className="mt-1 px-2.5 py-2.5 text-[13px] text-[#6b7280]">List item</p>
-      )}
+      <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
+        {payload.goalName}
+      </p>
+      <OutlineEditList
+        items={items}
+        hideDone={hideDone}
+        onChange={setItems}
+        onAdd={() =>
+          setItems((prev) => [
+            ...prev,
+            {
+              id: `add-${prev.length}`,
+              label: "New task",
+              depth: 0,
+              added: true,
+            },
+          ])
+        }
+      />
       {outline.length > 0 ? (
         <button
           type="button"
           onClick={() => {
             setSelected(
               Object.fromEntries(
-                steps.filter((s) => !s.added).map((s) => [s.id, true]),
+                items.filter((s) => !s.added).map((s) => [s.id, true]),
               ),
             );
+            setHideDone(true);
             setAdjusting(true);
           }}
-          className="mt-1 w-full py-2 text-[12px] text-[#5eead4]"
+          className="mt-2 w-full rounded-xl bg-[#5eead4] py-2.5 text-[13px] font-semibold text-[#042f2e] active:scale-[0.98]"
         >
           Change selection
         </button>
@@ -1022,7 +1022,7 @@ function FocusMode({
       <button
         type="button"
         onClick={onFinish}
-        className="mt-3 w-full rounded-xl bg-[#1c1c21] py-2.5 text-[13px] font-semibold text-[#ececec] ring-1 ring-white/10 active:scale-[0.98]"
+        className="mt-2 w-full rounded-xl bg-[#1c1c21] py-2.5 text-[13px] font-semibold text-[#ececec] ring-1 ring-white/10 active:scale-[0.98]"
       >
         End early
       </button>
