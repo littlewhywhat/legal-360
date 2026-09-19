@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { Choice, DemoCase, Scene } from "@demo/runtime";
 import { PhoneFrame } from "./PhoneFrame";
@@ -9,40 +9,89 @@ import { EmailScene } from "./EmailScene";
 import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
+import { AuroraScene } from "./AuroraScene";
 import { SquaresScene } from "./SquaresScene";
 
 function deviceLabel(scene: Scene): string {
-  if (scene.app === "squares") return "Your phone";
   switch (scene.device) {
     case "client":
       return "Client phone";
     case "supervisor":
       return "Supervisor phone";
+    case "watcher":
+      return "Your phone";
     default:
       return "System";
   }
+}
+
+function frameChrome(scene: Scene): "light" | "dark" | "overlay" {
+  if (scene.app === "squares") return "dark";
+  if (scene.app !== "aurora") return "light";
+  return (scene.payload as { mode?: string }).mode === "lock"
+    ? "overlay"
+    : "dark";
+}
+
+function pathSceneId(pathname: string, caseId: string): string | null {
+  const parts = pathname.split("/").filter(Boolean);
+  if (parts[0] !== caseId) return null;
+  return parts[1] ?? null;
+}
+
+function sceneHref(caseId: string, sceneId: string, firstSceneId: string): string {
+  if (sceneId === firstSceneId) return `/${caseId}/`;
+  return `/${caseId}/${sceneId}/`;
 }
 
 export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const paramScene = searchParams.get("s");
-  const { sceneById, firstSceneId } = demoCase;
+  const { sceneById, firstSceneId, meta } = demoCase;
+  const fromPath = pathSceneId(pathname, meta.id);
+  const fromQuery = searchParams.get("s");
 
   const sceneId =
-    paramScene && sceneById[paramScene] ? paramScene : firstSceneId;
+    (fromPath && sceneById[fromPath] && fromPath) ||
+    (fromQuery && sceneById[fromQuery] && fromQuery) ||
+    firstSceneId;
   const scene = sceneById[sceneId];
+  const stackRef = useRef<string[]>([sceneId]);
+  const [canBack, setCanBack] = useState(false);
+
+  const navigate = useCallback(
+    (nextId: string) => {
+      router.replace(sceneHref(meta.id, nextId, firstSceneId), { scroll: false });
+    },
+    [firstSceneId, meta.id, router],
+  );
 
   const go = useCallback(
     (nextId: string) => {
       if (!sceneById[nextId]) return;
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("s", nextId);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      if (nextId === firstSceneId) {
+        stackRef.current = [firstSceneId];
+        setCanBack(false);
+        navigate(nextId);
+        return;
+      }
+      const top = stackRef.current[stackRef.current.length - 1];
+      if (nextId !== top) {
+        stackRef.current = [...stackRef.current, nextId];
+        setCanBack(stackRef.current.length > 1);
+      }
+      navigate(nextId);
     },
-    [pathname, router, sceneById, searchParams],
+    [firstSceneId, navigate, sceneById],
   );
+
+  const back = useCallback(() => {
+    if (stackRef.current.length < 2) return;
+    stackRef.current = stackRef.current.slice(0, -1);
+    setCanBack(stackRef.current.length > 1);
+    navigate(stackRef.current[stackRef.current.length - 1]);
+  }, [navigate]);
 
   const advance = useCallback(() => {
     if (scene.next) go(scene.next);
@@ -57,6 +106,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft" || e.key === "Backspace") {
+        if (stackRef.current.length > 1) {
+          e.preventDefault();
+          back();
+        }
+      }
       if (e.key === "ArrowRight" || e.key === " ") {
         const hasBlockingChoices =
           !!scene.choices &&
@@ -74,7 +129,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, firstSceneId, go, scene]);
+  }, [advance, back, firstSceneId, go, scene]);
 
   const primaryChoice = useMemo(
     () => scene.choices?.find((c) => c.variant === "primary"),
@@ -87,9 +142,8 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
       <PhoneFrame
         deviceLabel={deviceLabel(scene)}
-        screenClassName={
-          scene.app === "squares" ? "bg-[#111113] text-[#ececec]" : undefined
-        }
+        chrome={frameChrome(scene)}
+        clock={scene.app === "aurora" ? "21:14" : "9:41"}
       >
         {scene.app === "email" ? (
           <EmailScene
@@ -119,6 +173,17 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onAdvance={scene.next ? advance : undefined}
           />
         ) : null}
+        {scene.app === "aurora" ? (
+          <AuroraScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
+            onBack={canBack ? back : undefined}
+          />
+        ) : null}
         {scene.app === "squares" ? (
           <SquaresScene
             key={scene.id}
@@ -135,16 +200,22 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         {scene.hint}
       </p>
 
-      <div className="flex items-center gap-3 text-xs text-[var(--stage-muted)]">
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={back}
+          disabled={!canBack}
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-fg)] disabled:cursor-default disabled:opacity-30"
+        >
+          Back
+        </button>
         <button
           type="button"
           onClick={() => go(firstSceneId)}
-          className="rounded-md px-2 py-1 underline-offset-2 hover:text-[var(--stage-fg)] hover:underline"
+          className="rounded-full border border-[var(--stage-fg)]/15 bg-[var(--stage-fg)]/[0.04] px-3.5 py-1.5 text-[12px] text-[var(--stage-muted)] hover:text-[var(--stage-fg)]"
         >
           Reset
         </button>
-        <span aria-hidden>·</span>
-        <span>Tap through · Home resets</span>
       </div>
     </div>
   );

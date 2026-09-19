@@ -1,8 +1,9 @@
 import type { DemoCase } from "@demo/runtime";
 import { demoCase as legal360 } from "@cases/legal-360";
+import { demoCase as aurora } from "@cases/aurora";
 import { demoCase as squares } from "@cases/squares";
 
-export const cases: DemoCase[] = [legal360, squares];
+export const cases: DemoCase[] = [legal360, aurora, squares];
 
 export const caseById = Object.fromEntries(
   cases.map((c) => [c.meta.id, c]),

@@ -9,6 +9,7 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@cases/aurora": "workspace:*",
     "@cases/legal-360": "workspace:*",
     "@cases/squares": "workspace:*",
     "@demo/runtime": "workspace:*",

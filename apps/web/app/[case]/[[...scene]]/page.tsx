@@ -5,17 +5,23 @@ import { DemoPlayer } from "@/components/demo/DemoPlayer";
 import { cases, getCase } from "@/lib/cases";
 
 export function generateStaticParams() {
-  return cases.map((c) => ({ case: c.meta.id }));
+  return cases.flatMap((c) => [
+    { case: c.meta.id, scene: [] as string[] },
+    ...c.scenes.map((s) => ({ case: c.meta.id, scene: [s.id] })),
+  ]);
 }
 
 export default async function CasePage({
   params,
 }: {
-  params: Promise<{ case: string }>;
+  params: Promise<{ case: string; scene?: string[] }>;
 }) {
-  const { case: caseId } = await params;
+  const { case: caseId, scene } = await params;
   const demoCase = getCase(caseId);
   if (!demoCase) notFound();
+
+  const pathSceneId = scene?.[0];
+  if (pathSceneId && !demoCase.sceneById[pathSceneId]) notFound();
 
   return (
     <main className="flex flex-1 flex-col">
