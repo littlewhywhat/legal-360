@@ -228,7 +228,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goal",
-    hint: "Checkbox completes. Tap text for this session. Next.",
+    hint: "Edit the list. Select for session, then tap tasks and Next.",
     choices: [
       { id: "next", label: "Next", next: "s3-ready", variant: "primary" },
     ],
@@ -308,7 +308,7 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Goal",
-    hint: "Same goal list — session changes flash in. Select and Next, or Back to goals.",
+    hint: "Same goal list — session changes flash in. Select for session, or Back to goals.",
     choices: [
       { id: "next", label: "Next", next: "s3-ready", variant: "primary" },
     ],

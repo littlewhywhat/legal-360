@@ -246,7 +246,6 @@ export function SquaresScene({
         items={payload.outline ?? []}
         onBack={payload.homeScene ? () => onGo(payload.homeScene!) : undefined}
         onStart={primary ? () => onChoice(primary) : undefined}
-        startLabel="Next"
         animateAdded={payload.animateAdded}
       />
     );
@@ -312,7 +311,6 @@ function HomeView({
         items={open.items ?? []}
         onBack={() => setOpenId(null)}
         onStart={open.startScene ? () => onGo(open.startScene!) : undefined}
-        startLabel="Next"
         onItems={(items) =>
           setGoals((prev) =>
             prev.map((g) => (g.id === open.id ? { ...g, items } : g)),
@@ -439,7 +437,6 @@ function GoalOutline({
   onBack,
   onStart,
   onItems,
-  startLabel = "Next",
   animateAdded = false,
 }: {
   title: string;
@@ -447,17 +444,18 @@ function GoalOutline({
   onBack?: () => void;
   onStart?: () => void;
   onItems?: (items: OutlineItem[]) => void;
-  startLabel?: string;
   animateAdded?: boolean;
 }) {
   const [items, setItems] = useState<OutlineItem[]>(initial);
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [hideDone, setHideDone] = useState(!animateAdded);
+  const [picking, setPicking] = useState(false);
   const [phase, setPhase] = useState<"in" | "flash" | "done">(
     animateAdded ? "in" : "done",
   );
   const picked = items.filter((i) => selected[i.id] && !i.done).length;
   const visible = hideDone ? items.filter((i) => !i.done) : items;
+  const canPick = items.some((i) => !i.done);
 
   useEffect(() => {
     if (!animateAdded) return;
@@ -479,6 +477,88 @@ function GoalOutline({
     ];
     setItems(next);
     onItems?.(next);
+  }
+
+  function addRow() {
+    if (items.length === 0) {
+      seedTasks();
+      return;
+    }
+    const next = [
+      ...items,
+      { id: `new-${items.length}`, label: "New task", depth: 0 },
+    ];
+    setItems(next);
+    onItems?.(next);
+  }
+
+  if (picking) {
+    return (
+      <Shell>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <button
+            type="button"
+            onClick={() => {
+              setPicking(false);
+              setSelected({});
+            }}
+            className="text-[11px] text-[#5eead4]"
+          >
+            Back
+          </button>
+          <button
+            type="button"
+            onClick={() => setHideDone((v) => !v)}
+            className="text-[11px] text-[#9aa0a6]"
+          >
+            {hideDone ? "Show completed" : "Hide completed"}
+          </button>
+        </div>
+        <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
+          {title}
+        </p>
+        <p className="mt-1 text-[11px] text-[#9aa0a6]">Tap tasks for this session</p>
+        <ul className="mt-3">
+          {visible.map((s) => {
+            const on = !!selected[s.id];
+            const done = !!s.done;
+            return (
+              <li key={s.id} className="border-b border-white/5">
+                <button
+                  type="button"
+                  disabled={done}
+                  aria-pressed={on}
+                  onClick={() =>
+                    setSelected((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
+                  }
+                  className={[
+                    "-mx-3.5 flex w-[calc(100%+1.75rem)] items-center py-2.5 pr-3.5 text-left text-[13px] leading-snug",
+                    on && !done ? "bg-[#5eead4]/15 text-[#5eead4]" : "",
+                    done ? "text-[#6b7280] line-through" : "",
+                  ].join(" ")}
+                  style={{ paddingLeft: 14 + s.depth * 16 }}
+                >
+                  {s.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+        <button
+          type="button"
+          disabled={picked === 0 || !onStart}
+          onClick={onStart}
+          className={[
+            "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
+            picked > 0 && onStart
+              ? "bg-[#5eead4] text-[#042f2e]"
+              : "bg-[#1c1c21] text-[#6b7280]",
+          ].join(" ")}
+        >
+          Next
+        </button>
+      </Shell>
+    );
   }
 
   return (
@@ -508,7 +588,6 @@ function GoalOutline({
       </p>
       <ul className="mt-3">
         {visible.map((s) => {
-          const on = !!selected[s.id];
           const done = !!s.done;
           const added = animateAdded && !!s.added;
           return (
@@ -516,11 +595,8 @@ function GoalOutline({
               <div
                 className={[
                   "-mx-3.5 flex items-center gap-2 py-2 pr-3.5 transition duration-500",
-                  on && !done ? "bg-[#5eead4]/15" : "",
-                  added && phase === "in" && !on
-                    ? "translate-y-1 opacity-0"
-                    : "",
-                  added && phase === "flash" && !on ? "bg-[#5eead4]/15" : "",
+                  added && phase === "in" ? "translate-y-1 opacity-0" : "",
+                  added && phase === "flash" ? "bg-[#5eead4]/15" : "",
                 ].join(" ")}
                 style={{ paddingLeft: 14 + s.depth * 16 }}
               >
@@ -534,7 +610,6 @@ function GoalOutline({
                     );
                     setItems(next);
                     onItems?.(next);
-                    setSelected((prev) => ({ ...prev, [s.id]: false }));
                   }}
                   className="shrink-0"
                 >
@@ -546,52 +621,51 @@ function GoalOutline({
                     }}
                   />
                 </button>
-                <button
-                  type="button"
+                <input
+                  value={s.label}
                   disabled={done}
-                  aria-pressed={on}
-                  onClick={() =>
-                    setSelected((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
-                  }
+                  aria-label={`Edit ${s.label}`}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    const next = items.map((i) =>
+                      i.id === s.id ? { ...i, label: v } : i,
+                    );
+                    setItems(next);
+                    onItems?.(next);
+                  }}
                   className={[
-                    "min-w-0 flex-1 py-0.5 text-left text-[13px] leading-snug",
+                    "min-w-0 flex-1 bg-transparent py-0.5 text-[13px] leading-snug outline-none",
                     done ? "text-[#6b7280] line-through" : "",
-                    on && !done ? "text-[#5eead4]" : "",
                   ].join(" ")}
-                >
-                  {s.label}
-                </button>
+                />
               </div>
             </li>
           );
         })}
       </ul>
-      {items.length === 0 ? (
-        <button
-          type="button"
-          onClick={seedTasks}
-          className="w-full px-2 py-2.5 text-left text-[13px] text-[#6b7280]"
-        >
-          List item
-        </button>
-      ) : (
-        <p className="px-2 py-2.5 text-[13px] text-[#6b7280]">List item</p>
-      )}
-      {onStart ? (
-        <button
-          type="button"
-          disabled={picked === 0}
-          onClick={onStart}
-          className={[
-            "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
-            picked > 0
-              ? "bg-[#5eead4] text-[#042f2e]"
-              : "bg-[#1c1c21] text-[#6b7280]",
-          ].join(" ")}
-        >
-          {startLabel}
-        </button>
-      ) : null}
+      <button
+        type="button"
+        onClick={addRow}
+        className="w-full px-2 py-2.5 text-left text-[13px] text-[#6b7280]"
+      >
+        List item
+      </button>
+      <button
+        type="button"
+        disabled={!canPick}
+        onClick={() => {
+          setSelected({});
+          setPicking(true);
+        }}
+        className={[
+          "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
+          canPick
+            ? "bg-[#5eead4] text-[#042f2e]"
+            : "bg-[#1c1c21] text-[#6b7280]",
+        ].join(" ")}
+      >
+        Select for session
+      </button>
     </Shell>
   );
 }
