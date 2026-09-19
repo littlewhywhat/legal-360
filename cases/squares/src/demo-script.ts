@@ -79,9 +79,10 @@ const goalsAfter = [
 ];
 
 const landingSteps = [
-  { id: "hero", label: "Write hero copy" },
-  { id: "cta", label: "Add CTA" },
-  { id: "mobile", label: "Fix mobile layout" },
+  { id: "landing", label: "Landing page", depth: 0 },
+  { id: "hero", label: "Write hero copy", depth: 1 },
+  { id: "cta", label: "Add CTA", depth: 1 },
+  { id: "mobile", label: "Fix mobile layout", depth: 1 },
 ];
 
 const afterItems = [
@@ -264,12 +265,13 @@ export const scenes: Scene[] = [
     device: "client",
     app: "squares",
     title: "Focus",
-    hint: "Rename or add squares. End early or tap the timer when time is up.",
+    hint: "Rename or add. Change selection without ending. End early or tap the timer.",
     payload: {
       mode: "focus",
       timer: "20:00",
       goalName: "Launch my side project",
       steps: landingSteps,
+      outline: launchItems,
       finishTo: "s5-summary",
     },
   },

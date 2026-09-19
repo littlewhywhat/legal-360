@@ -27,6 +27,7 @@ type OutlineItem = {
 type StepItem = {
   id: string;
   label: string;
+  depth?: number;
   done?: boolean;
   added?: boolean;
 };
@@ -431,6 +432,91 @@ function HomeView({
   );
 }
 
+function PickTasks({
+  title,
+  items,
+  selected,
+  hideDone,
+  onToggleHide,
+  onToggle,
+  onBack,
+  onConfirm,
+}: {
+  title: string;
+  items: OutlineItem[];
+  selected: Record<string, boolean>;
+  hideDone: boolean;
+  onToggleHide: () => void;
+  onToggle: (id: string) => void;
+  onBack: () => void;
+  onConfirm: () => void;
+}) {
+  const visible = hideDone ? items.filter((i) => !i.done) : items;
+  const picked = items.filter((i) => selected[i.id] && !i.done).length;
+
+  return (
+    <Shell>
+      <div className="flex items-center justify-between gap-2 pt-1">
+        <button
+          type="button"
+          onClick={onBack}
+          className="text-[11px] text-[#5eead4]"
+        >
+          Back
+        </button>
+        <button
+          type="button"
+          onClick={onToggleHide}
+          className="text-[11px] text-[#9aa0a6]"
+        >
+          {hideDone ? "Show completed" : "Hide completed"}
+        </button>
+      </div>
+      <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
+        {title}
+      </p>
+      <p className="mt-1 text-[11px] text-[#9aa0a6]">Tap tasks for this session</p>
+      <ul className="mt-3">
+        {visible.map((s) => {
+          const on = !!selected[s.id];
+          const done = !!s.done;
+          return (
+            <li key={s.id} className="border-b border-white/5">
+              <button
+                type="button"
+                disabled={done}
+                aria-pressed={on}
+                onClick={() => onToggle(s.id)}
+                className={[
+                  "-mx-3.5 flex w-[calc(100%+1.75rem)] items-center py-2.5 pr-3.5 text-left text-[13px] leading-snug",
+                  on && !done ? "bg-[#5eead4]/15 text-[#5eead4]" : "",
+                  done ? "text-[#6b7280] line-through" : "",
+                ].join(" ")}
+                style={{ paddingLeft: 14 + s.depth * 16 }}
+              >
+                {s.label}
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      <button
+        type="button"
+        disabled={picked === 0}
+        onClick={onConfirm}
+        className={[
+          "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
+          picked > 0
+            ? "bg-[#5eead4] text-[#042f2e]"
+            : "bg-[#1c1c21] text-[#6b7280]",
+        ].join(" ")}
+      >
+        Next
+      </button>
+    </Shell>
+  );
+}
+
 function GoalOutline({
   title,
   items: initial,
@@ -453,7 +539,6 @@ function GoalOutline({
   const [phase, setPhase] = useState<"in" | "flash" | "done">(
     animateAdded ? "in" : "done",
   );
-  const picked = items.filter((i) => selected[i.id] && !i.done).length;
   const visible = hideDone ? items.filter((i) => !i.done) : items;
   const canPick = items.some((i) => !i.done);
 
@@ -494,70 +579,21 @@ function GoalOutline({
 
   if (picking) {
     return (
-      <Shell>
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <button
-            type="button"
-            onClick={() => {
-              setPicking(false);
-              setSelected({});
-            }}
-            className="text-[11px] text-[#5eead4]"
-          >
-            Back
-          </button>
-          <button
-            type="button"
-            onClick={() => setHideDone((v) => !v)}
-            className="text-[11px] text-[#9aa0a6]"
-          >
-            {hideDone ? "Show completed" : "Hide completed"}
-          </button>
-        </div>
-        <p className="mt-2 text-[17px] font-semibold leading-snug tracking-tight">
-          {title}
-        </p>
-        <p className="mt-1 text-[11px] text-[#9aa0a6]">Tap tasks for this session</p>
-        <ul className="mt-3">
-          {visible.map((s) => {
-            const on = !!selected[s.id];
-            const done = !!s.done;
-            return (
-              <li key={s.id} className="border-b border-white/5">
-                <button
-                  type="button"
-                  disabled={done}
-                  aria-pressed={on}
-                  onClick={() =>
-                    setSelected((prev) => ({ ...prev, [s.id]: !prev[s.id] }))
-                  }
-                  className={[
-                    "-mx-3.5 flex w-[calc(100%+1.75rem)] items-center py-2.5 pr-3.5 text-left text-[13px] leading-snug",
-                    on && !done ? "bg-[#5eead4]/15 text-[#5eead4]" : "",
-                    done ? "text-[#6b7280] line-through" : "",
-                  ].join(" ")}
-                  style={{ paddingLeft: 14 + s.depth * 16 }}
-                >
-                  {s.label}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-        <button
-          type="button"
-          disabled={picked === 0 || !onStart}
-          onClick={onStart}
-          className={[
-            "mt-2 w-full rounded-xl py-2.5 text-[13px] font-semibold active:scale-[0.98]",
-            picked > 0 && onStart
-              ? "bg-[#5eead4] text-[#042f2e]"
-              : "bg-[#1c1c21] text-[#6b7280]",
-          ].join(" ")}
-        >
-          Next
-        </button>
-      </Shell>
+      <PickTasks
+        title={title}
+        items={items}
+        selected={selected}
+        hideDone={hideDone}
+        onToggleHide={() => setHideDone((v) => !v)}
+        onToggle={(id) =>
+          setSelected((prev) => ({ ...prev, [id]: !prev[id] }))
+        }
+        onBack={() => {
+          setPicking(false);
+          setSelected({});
+        }}
+        onConfirm={() => onStart?.()}
+      />
     );
   }
 
@@ -732,9 +768,12 @@ function ReadyTimer({
       </div>
       <ul className="mt-6 space-y-1.5">
         {steps.map((s) => (
-          <li key={s.id} className="flex items-center gap-2 text-[13px]">
-            <span className="inline-block h-3.5 w-3.5 shrink-0 rounded-[3px] ring-1 ring-[#5eead4]/50" />
-            <span className="min-w-0 flex-1 leading-snug">{s.label}</span>
+          <li
+            key={s.id}
+            className="text-[13px] leading-snug"
+            style={{ paddingLeft: (s.depth ?? 0) * 16 }}
+          >
+            {s.label}
           </li>
         ))}
       </ul>
@@ -846,9 +885,41 @@ function FocusMode({
   onFinish: () => void;
 }) {
   const extras = ["Check breakpoints", "Fix nav wrap"];
+  const outline = payload.outline ?? [];
   const [steps, setSteps] = useState<StepItem[]>(() => payload.steps ?? []);
   const [filled, setFilled] = useState<Record<string, boolean>>({});
+  const [adjusting, setAdjusting] = useState(false);
+  const [hideDone, setHideDone] = useState(true);
+  const [selected, setSelected] = useState<Record<string, boolean>>({});
   const extraIdx = steps.filter((s) => s.added).length;
+
+  if (adjusting) {
+    return (
+      <PickTasks
+        title={payload.goalName ?? ""}
+        items={outline}
+        selected={selected}
+        hideDone={hideDone}
+        onToggleHide={() => setHideDone((v) => !v)}
+        onToggle={(id) =>
+          setSelected((prev) => ({ ...prev, [id]: !prev[id] }))
+        }
+        onBack={() => setAdjusting(false)}
+        onConfirm={() => {
+          const picked = outline
+            .filter((i) => selected[i.id] && !i.done)
+            .map((i) => ({
+              id: i.id,
+              label: i.label,
+              depth: i.depth,
+            }));
+          const extraRows = steps.filter((s) => s.added);
+          setSteps([...picked, ...extraRows]);
+          setAdjusting(false);
+        }}
+      />
+    );
+  }
 
   return (
     <Shell>
@@ -878,6 +949,7 @@ function FocusMode({
                 "rounded-xl bg-[#1c1c21] ring-1",
                 s.added ? "ring-[#5eead4]/35" : "ring-white/5",
               ].join(" ")}
+              style={{ marginLeft: (s.depth ?? 0) * 12 }}
             >
               <div className="flex items-center gap-2 px-2.5 py-2">
                 <button
@@ -921,7 +993,7 @@ function FocusMode({
             const label = extras[extraIdx];
             setSteps((prev) => [
               ...prev,
-              { id: `add-${extraIdx}`, label, added: true },
+              { id: `add-${extraIdx}`, label, added: true, depth: 1 },
             ]);
           }}
           className="mt-1 w-full px-2.5 py-2.5 text-left text-[13px] text-[#6b7280]"
@@ -931,6 +1003,22 @@ function FocusMode({
       ) : (
         <p className="mt-1 px-2.5 py-2.5 text-[13px] text-[#6b7280]">List item</p>
       )}
+      {outline.length > 0 ? (
+        <button
+          type="button"
+          onClick={() => {
+            setSelected(
+              Object.fromEntries(
+                steps.filter((s) => !s.added).map((s) => [s.id, true]),
+              ),
+            );
+            setAdjusting(true);
+          }}
+          className="mt-1 w-full py-2 text-[12px] text-[#5eead4]"
+        >
+          Change selection
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onFinish}
