@@ -7,6 +7,9 @@ const launchItems = [
   { id: "hero", label: "Write hero copy", depth: 1 },
   { id: "cta", label: "Add CTA", depth: 1 },
   { id: "mobile", label: "Fix mobile layout", depth: 1 },
+  { id: "share", label: "Share launch", depth: 0 },
+  { id: "og", label: "Make OG image", depth: 1 },
+  { id: "tweet", label: "Write launch tweet", depth: 1 },
   { id: "api", label: "Backend API", depth: 0, done: true },
   { id: "sketch", label: "Sketch endpoints", depth: 1, done: true },
 ];
@@ -96,6 +99,9 @@ const afterItems = [
     depth: 1,
     added: true,
   },
+  { id: "share", label: "Share launch", depth: 0 },
+  { id: "og", label: "Make OG image", depth: 1 },
+  { id: "tweet", label: "Write launch tweet", depth: 1 },
   { id: "api", label: "Backend API", depth: 0, done: true },
   { id: "sketch", label: "Sketch endpoints", depth: 1, done: true },
 ];
