@@ -10,6 +10,7 @@ import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
 import { AuroraScene } from "./AuroraScene";
+import { SquaresScene } from "./SquaresScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -22,6 +23,14 @@ function deviceLabel(scene: Scene): string {
     default:
       return "System";
   }
+}
+
+function frameChrome(scene: Scene): "light" | "dark" | "overlay" {
+  if (scene.app === "squares") return "dark";
+  if (scene.app !== "aurora") return "light";
+  return (scene.payload as { mode?: string }).mode === "lock"
+    ? "overlay"
+    : "dark";
 }
 
 function pathSceneId(pathname: string, caseId: string): string | null {
@@ -133,13 +142,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
 
       <PhoneFrame
         deviceLabel={deviceLabel(scene)}
-        chrome={
-          scene.app === "aurora"
-            ? (scene.payload as { mode?: string }).mode === "lock"
-              ? "overlay"
-              : "dark"
-            : "light"
-        }
+        chrome={frameChrome(scene)}
         clock={scene.app === "aurora" ? "21:14" : "9:41"}
       >
         {scene.app === "email" ? (
@@ -179,6 +182,16 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onAdvance={scene.next ? advance : undefined}
             onGo={go}
             onBack={canBack ? back : undefined}
+          />
+        ) : null}
+        {scene.app === "squares" ? (
+          <SquaresScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
           />
         ) : null}
       </PhoneFrame>
