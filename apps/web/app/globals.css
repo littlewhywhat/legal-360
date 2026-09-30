@@ -25,7 +25,16 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up,
-  .animate-banner-in {
+  .animate-banner-in,
+  .room-pop,
+  .room-insert,
+  .room-stamp,
+  .room-stamp-corner,
+  .room-push,
+  .room-pulse,
+  .agent-breathe,
+  .agent-spin,
+  .desk-caret {
     animation: none !important;
   }
 }
@@ -80,4 +89,150 @@ body {
   display: none;
   width: 0;
   height: 0;
+}
+
+@keyframes room-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-insert {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-stamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1.4);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-8deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-8deg) scale(1);
+  }
+}
+
+@keyframes room-push {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(5, 150, 105, 0);
+  }
+}
+
+@keyframes agent-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.06);
+  }
+}
+
+@keyframes agent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes desk-blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.room-pop {
+  animation: room-pop 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-insert {
+  animation: room-insert 0.95s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-stamp {
+  animation: room-stamp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+@keyframes room-stamp-corner {
+  0% {
+    opacity: 0;
+    transform: rotate(-10deg) scale(1.25);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(-6deg) scale(1);
+  }
+}
+
+.room-stamp-corner {
+  animation: room-stamp-corner 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-push {
+  animation: room-push 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-pulse {
+  animation: room-pulse 2.4s ease-out infinite;
+}
+
+.agent-breathe {
+  animation: agent-breathe 3.4s ease-in-out infinite;
+}
+
+.agent-spin {
+  animation: agent-spin 2.2s linear infinite;
+}
+
+.desk-caret {
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  background: currentColor;
+  animation: desk-blink 1s steps(1) infinite;
+}
+
+.desk-scroll {
+  scrollbar-width: none;
+}
+
+.desk-scroll::-webkit-scrollbar {
+  display: none;
 }
