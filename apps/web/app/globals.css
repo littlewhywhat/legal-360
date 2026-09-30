@@ -81,3 +81,55 @@ body {
   width: 0;
   height: 0;
 }
+
+@keyframes agent-dot {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.8);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.agent-dot {
+  animation: agent-dot 1.05s ease-in-out infinite;
+}
+
+@keyframes agent-free {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.agent-free {
+  animation: agent-free 2.4s ease-in-out infinite;
+}
+
+@keyframes qq-row {
+  0%,
+  100% {
+    box-shadow: inset 2px 0 0 transparent;
+  }
+  50% {
+    box-shadow: inset 2px 0 0 #15803d;
+  }
+}
+
+.qq-row {
+  animation: qq-row 1.6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-dot,
+  .agent-free,
+  .qq-row {
+    animation: none;
+  }
+}
