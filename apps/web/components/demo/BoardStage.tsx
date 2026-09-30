@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   AGENTS,
   BOOKS,
@@ -69,216 +69,250 @@ function agentName(id: string | null) {
   return AGENTS.find((agent) => agent.id === id)?.name ?? "";
 }
 
+const ACCEPT_BEAT = 7;
+const BEAT_COUNT = 9;
+
 export function BoardStage() {
   const [world, setWorld] = useState<World>(freshWorld);
-  const [runId, setRunId] = useState(0);
-  const worldRef = useRef(world);
-  worldRef.current = world;
+  const [cursor, setCursor] = useState(0);
+  const [busy, setBusy] = useState(false);
+  const cursorRef = useRef(0);
+  const genRef = useRef(0);
 
   const dispatch = useCallback((action: Action) => {
     setWorld((current) => reduce(current, action));
   }, []);
 
-  const playing = runId > 0;
-
-  useEffect(() => {
-    if (!runId) return;
-    let cancel = false;
-    const dead = () => cancel;
-    const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-    const type = async (person: PersonId, text: string) => {
-      let acc = "";
-      for (const ch of text) {
-        if (dead()) return;
-        acc += ch;
-        dispatch({ type: "draft", person, text: acc });
-        await wait(26);
-      }
-    };
-
-    const patch = (missionId: string, fn: (mission: Mission) => Mission) => {
-      dispatch({ type: "mission", missionId, patch: fn });
-    };
-
-    (async () => {
-      dispatch({ type: "reset" });
-      await wait(500);
-      if (dead()) return;
-      dispatch({ type: "open", person: "tereza", missionId: "feature" });
-      dispatch({ type: "tab", person: "tereza", tab: "desktop" });
-      await wait(700);
-      if (dead()) return;
-      await type("tereza", "Owner a effort. Termín ne.");
-      if (dead()) return;
-      dispatch({ type: "send", person: "tereza" });
-      patch("feature", (mission) =>
-        markTodo(
-          {
-            ...goTo(mission, "spec"),
-            desktop: 1,
-            cursor: "button",
-            artifacts: [
-              ...mission.artifacts,
-              {
-                id: "decision",
-                kind: "Decision",
-                title: "Fields",
-                body: "Owner and effort. No target date.",
-              },
-            ],
-          },
-          "owner",
-          true,
-        ),
-      );
-      dispatch({ type: "file", id: "decision" });
-      await wait(1100);
-      if (dead()) return;
-      patch("feature", (mission) =>
-        markTodo(
-          {
-            ...goTo(mission, "implement"),
-            desktop: 2,
-            cursor: "card",
-            artifacts: [
-              ...mission.artifacts,
-              {
-                id: "spec",
-                kind: "Spec",
-                title: "FeatureCard",
-                body: "Props owner and effort. Date stays off the card.",
-              },
-            ],
-          },
-          "effort",
-          true,
-        ),
-      );
-      dispatch({ type: "file", id: "spec" });
-      await wait(1200);
-      if (dead()) return;
-      dispatch({ type: "tab", person: "tereza", tab: "files" });
-      await wait(800);
-      if (dead()) return;
-      patch("feature", (mission) => ({
-        ...mission,
-        agentId: null,
-        cursor: null,
-        waits: { tereza: "stake", owen: "dq" },
-        threads: {
-          ...mission.threads,
-          owen: [
-            {
-              id: "ask-owen",
-              from: "agent",
-              text: "Add owner and effort on FeatureCard. Leave the date off.",
-            },
-          ],
+  const runFrom = useCallback(
+    async (start: number, end: number) => {
+      const token = genRef.current;
+      const dead = () => genRef.current !== token;
+      const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
+      const type = async (person: PersonId, text: string) => {
+        let acc = "";
+        for (const ch of text) {
+          if (dead()) return;
+          acc += ch;
+          dispatch({ type: "draft", person, text: acc });
+          await wait(26);
+        }
+      };
+      const patch = (missionId: string, fn: (mission: Mission) => Mission) => {
+        if (!dead()) dispatch({ type: "mission", missionId, patch: fn });
+      };
+      const beats: Array<() => Promise<void>> = [
+        async () => {
+          dispatch({ type: "reset" });
+          await wait(400);
+          if (dead()) return;
+          dispatch({ type: "open", person: "tereza", missionId: "feature" });
+          dispatch({ type: "tab", person: "tereza", tab: "desktop" });
         },
-      }));
-      dispatch({ type: "filter", person: "owen", filter: "dq" });
-      await wait(700);
-      if (dead()) return;
-      dispatch({ type: "open", person: "owen", missionId: "feature" });
-      dispatch({ type: "thread", person: "owen", thread: "tereza" });
-      await wait(1100);
-      if (dead()) return;
-      dispatch({ type: "thread", person: "owen", thread: "owen" });
-      await type(
-        "owen",
-        "Two fields on FeatureCard: owner and effort. Empty owner renders a dash. No date prop.",
-      );
-      if (dead()) return;
-      dispatch({ type: "send", person: "owen" });
-      patch("theme", (mission) => ({ ...mission, agentId: null, terminal: [...mission.terminal, "  paused"] }));
-      patch("feature", (mission) =>
-        markTodo(
-          {
+        async () => {
+          await type("tereza", "Owner a effort. Termín ne.");
+          if (dead()) return;
+          dispatch({ type: "send", person: "tereza" });
+          patch("feature", (mission) =>
+            markTodo(
+              {
+                ...goTo(mission, "spec"),
+                desktop: 1,
+                cursor: "button",
+                artifacts: [
+                  ...mission.artifacts,
+                  {
+                    id: "decision",
+                    kind: "Decision",
+                    title: "Fields",
+                    body: "Owner and effort. No target date.",
+                  },
+                ],
+              },
+              "owner",
+              true,
+            ),
+          );
+          dispatch({ type: "file", id: "decision" });
+        },
+        async () => {
+          patch("feature", (mission) =>
+            markTodo(
+              {
+                ...goTo(mission, "implement"),
+                desktop: 2,
+                cursor: "card",
+                artifacts: [
+                  ...mission.artifacts,
+                  {
+                    id: "spec",
+                    kind: "Spec",
+                    title: "FeatureCard",
+                    body: "Props owner and effort. Date stays off the card.",
+                  },
+                ],
+              },
+              "effort",
+              true,
+            ),
+          );
+          dispatch({ type: "file", id: "spec" });
+          dispatch({ type: "tab", person: "tereza", tab: "files" });
+        },
+        async () => {
+          patch("feature", (mission) => ({
             ...mission,
-            agentId: "kit",
-            cursor: "card",
-            diff: FEATURE_DIFF,
-            terminal: ["pnpm test board/card-fields", "  ✓ owner renders", "  ✓ effort renders"],
-          },
-          "blank",
-          true,
-        ),
-      );
-      dispatch({ type: "tab", person: "owen", tab: "terminal" });
-      await wait(900);
-      if (dead()) return;
-      dispatch({ type: "tab", person: "owen", tab: "changes" });
-      dispatch({ type: "tab", person: "tereza", tab: "playbook" });
-      await wait(600);
-      if (dead()) return;
-      dispatch({ type: "add-step", missionId: "feature", label: "Empty owner" });
-      await wait(900);
-      if (dead()) return;
-      patch("feature", (mission) => ({
-        ...goTo(mission, "accept"),
-        desktop: 3,
-        cursor: null,
-        agentId: "ada",
-        waits: { tereza: "qq", owen: "stake" },
-        terminal: [...mission.terminal, "  ✓ empty owner is a dash"],
-        artifacts: [
-          ...mission.artifacts,
-          {
-            id: "check",
-            kind: "Check",
-            title: "card-fields",
-            body: "owner renders · effort renders · empty owner is a dash",
-          },
-        ],
-        typing: "tereza",
-      }));
-      dispatch({ type: "ping", person: "tereza", on: true });
-      dispatch({ type: "file", id: "check" });
-      await wait(700);
-      if (dead()) return;
-      patch("feature", (mission) => ({
-        ...mission,
-        typing: null,
-        threads: {
-          ...mission.threads,
-          tereza: [
-            ...mission.threads.tereza,
-            { id: "q2", from: "agent", text: "Owner a effort jsou na kartě. Bereme?" },
-          ],
+            agentId: null,
+            cursor: null,
+            waits: { tereza: "stake", owen: "dq" },
+            threads: {
+              ...mission.threads,
+              owen: [
+                {
+                  id: "ask-owen",
+                  from: "agent",
+                  text: "Add owner and effort on FeatureCard. Leave the date off.",
+                },
+              ],
+            },
+          }));
+          dispatch({ type: "filter", person: "owen", filter: "dq" });
         },
-      }));
-      await wait(900);
-      if (dead()) return;
-      dispatch({ type: "ping", person: "tereza", on: false });
-      dispatch({ type: "close", missionId: "feature", tone: "done" });
-      setRunId(0);
-    })();
+        async () => {
+          dispatch({ type: "open", person: "owen", missionId: "feature" });
+          dispatch({ type: "thread", person: "owen", thread: "tereza" });
+          await wait(700);
+          if (dead()) return;
+          dispatch({ type: "thread", person: "owen", thread: "owen" });
+          await type(
+            "owen",
+            "Two fields on FeatureCard: owner and effort. Empty owner renders a dash. No date prop.",
+          );
+          if (dead()) return;
+          dispatch({ type: "send", person: "owen" });
+        },
+        async () => {
+          patch("theme", (mission) => ({
+            ...mission,
+            agentId: null,
+            terminal: [...mission.terminal, "  paused"],
+          }));
+          patch("feature", (mission) =>
+            markTodo(
+              {
+                ...mission,
+                agentId: "kit",
+                cursor: "card",
+                diff: FEATURE_DIFF,
+                terminal: ["pnpm test board/card-fields", "  ✓ owner renders", "  ✓ effort renders"],
+              },
+              "blank",
+              true,
+            ),
+          );
+          dispatch({ type: "tab", person: "owen", tab: "terminal" });
+          await wait(500);
+          if (dead()) return;
+          dispatch({ type: "tab", person: "owen", tab: "changes" });
+        },
+        async () => {
+          dispatch({ type: "tab", person: "tereza", tab: "playbook" });
+          dispatch({ type: "add-step", missionId: "feature", label: "Empty owner" });
+        },
+        async () => {
+          patch("feature", (mission) => ({
+            ...goTo(mission, "accept"),
+            desktop: 3,
+            cursor: null,
+            agentId: "ada",
+            waits: { tereza: "qq", owen: "stake" },
+            terminal: [...mission.terminal, "  ✓ empty owner is a dash"],
+            artifacts: [
+              ...mission.artifacts,
+              {
+                id: "check",
+                kind: "Check",
+                title: "card-fields",
+                body: "owner renders · effort renders · empty owner is a dash",
+              },
+            ],
+          }));
+          dispatch({ type: "filter", person: "tereza", filter: "qq" });
+          dispatch({ type: "open", person: "tereza", missionId: "feature" });
+          dispatch({ type: "thread", person: "tereza", thread: "tereza" });
+          dispatch({ type: "ping", person: "tereza", on: true });
+          dispatch({ type: "file", id: "check" });
+          await wait(400);
+          if (dead()) return;
+          patch("feature", (mission) => ({
+            ...mission,
+            threads: {
+              ...mission.threads,
+              tereza: [
+                ...mission.threads.tereza,
+                { id: "q2", from: "agent", text: "Owner a effort jsou na kartě. Bereme?" },
+              ],
+            },
+          }));
+        },
+        async () => {
+          dispatch({ type: "ping", person: "tereza", on: false });
+          dispatch({ type: "close", missionId: "feature", tone: "done" });
+        },
+      ];
 
-    return () => {
-      cancel = true;
-    };
-  }, [runId]);
+      setBusy(true);
+      try {
+        for (let i = start; i <= end && i < beats.length; i += 1) {
+          if (dead()) return;
+          await beats[i]();
+          if (dead()) return;
+          cursorRef.current = i + 1;
+          setCursor(i + 1);
+        }
+      } finally {
+        if (genRef.current === token) setBusy(false);
+      }
+    },
+    [dispatch],
+  );
+
+  const reset = () => {
+    genRef.current += 1;
+    cursorRef.current = 0;
+    setCursor(0);
+    setBusy(false);
+    dispatch({ type: "reset" });
+  };
 
   return (
     <div className="flex min-h-0 flex-1 flex-col px-3 pb-3">
       <div className="flex items-center justify-end gap-2 py-2">
+        <span className="mr-1 text-[12px] tabular-nums text-[var(--stage-muted)]">
+          {Math.min(cursor, BEAT_COUNT)}/{BEAT_COUNT}
+        </span>
         <button
           type="button"
+          disabled={busy || cursor > ACCEPT_BEAT}
           onClick={() => {
-            if (playing) setRunId(0);
-            else setRunId((value) => value + 1);
+            void runFrom(cursorRef.current, ACCEPT_BEAT);
           }}
-          className="rounded-full bg-white/10 px-3 py-1 text-[12px] text-[var(--stage-fg)]"
+          className="rounded-full bg-white/10 px-3 py-1 text-[12px] text-[var(--stage-fg)] disabled:opacity-40"
         >
-          {playing ? "Stop" : "Play"}
+          Play
         </button>
         <button
           type="button"
+          disabled={busy || cursor >= BEAT_COUNT}
           onClick={() => {
-            setRunId(0);
-            dispatch({ type: "reset" });
+            void runFrom(cursorRef.current, cursorRef.current);
           }}
+          className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#1c1c1c] disabled:opacity-40"
+        >
+          Next
+        </button>
+        <button
+          type="button"
+          onClick={reset}
           className="rounded-full px-3 py-1 text-[12px] text-[var(--stage-muted)]"
         >
           Reset
