@@ -73,13 +73,14 @@ export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "stake", label: "Stakeholder" },
 ];
 
-const DIFF = `export async function createFeature(insightId: string) {
-  const insight = await db.insight.find(insightId);
-  return db.feature.create({
-    column: "next",
-    quote: insight.quote ?? null,
-    insightId,
-  });
+const DIFF = `function FeatureCard({ title, owner, effort }: Props) {
+  return (
+    <article>
+      <h3>{title}</h3>
+      <Field label="Owner" value={owner ?? "—"} />
+      <Field label="Effort" value={effort} />
+    </article>
+  );
 }`;
 
 function seat(partial: Pick<Seat, "filter">): Seat {
@@ -102,7 +103,7 @@ function feature(): Mission {
   return {
     id: "feature",
     roomId: "board",
-    title: "Feature from insight",
+    title: "Card fields",
     steps: [
       { id: "frame", label: "Frame", state: "done" },
       { id: "decide", label: "Decide", state: "now" },
@@ -111,9 +112,9 @@ function feature(): Mission {
       { id: "accept", label: "Accept", state: "next" },
     ],
     todos: [
-      { id: "column", label: "Default column", done: false },
-      { id: "quote", label: "Quote on the card", done: false },
-      { id: "link", label: "Link insight", done: false },
+      { id: "owner", label: "Owner field", done: false },
+      { id: "effort", label: "Effort field", done: false },
+      { id: "blank", label: "Empty owner", done: false },
     ],
     artifacts: [],
     diff: null,
@@ -127,7 +128,7 @@ function feature(): Mission {
         {
           id: "q1",
           from: "agent",
-          text: "Nová karta z insightu — do kterého sloupce?",
+          text: "Na kartě feature chybí pole. Která přidáme?",
         },
       ],
       owen: [],

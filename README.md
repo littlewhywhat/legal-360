@@ -12,7 +12,7 @@ Aurora job: inspire a trip to an observation place and show how to get there. Nu
 |---|---|---|
 | Legal 360 | `/legal-360` | [as-is](./cases/legal-360/docs/flows/client-redline-as-is.md), [auto Slack](./cases/legal-360/docs/flows/client-redline-auto-slack.md) |
 | Aurora | `/aurora` | [as-is](./cases/aurora/docs/flows/as-is.md), [to-be](./cases/aurora/docs/flows/to-be.md) |
-| Board | `/board` | [feature from insight](./cases/board/docs/flows/feature-from-insight.md) |
+| Board | `/board` | [card fields](./cases/board/docs/flows/feature-from-insight.md) |
 
 ## Add a case
 

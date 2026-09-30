@@ -109,7 +109,7 @@ export function BoardStage() {
       dispatch({ type: "tab", person: "tereza", tab: "desktop" });
       await wait(700);
       if (dead()) return;
-      await type("tereza", "Rok. Měsíc necháme jako druhý řádek.");
+      await type("tereza", "Owner a effort. Termín ne.");
       if (dead()) return;
       dispatch({ type: "send", person: "tereza" });
       patch("feature", (mission) =>
@@ -123,12 +123,12 @@ export function BoardStage() {
               {
                 id: "decision",
                 kind: "Decision",
-                title: "Default column",
-                body: "Next. Now only by drag.",
+                title: "Fields",
+                body: "Owner and effort. No target date.",
               },
             ],
           },
-          "column",
+          "owner",
           true,
         ),
       );
@@ -146,12 +146,12 @@ export function BoardStage() {
               {
                 id: "spec",
                 kind: "Spec",
-                title: "POST /features",
-                body: "insightId, column next. Card stores quote and insightId. Now stays empty.",
+                title: "FeatureCard",
+                body: "Props owner and effort. Date stays off the card.",
               },
             ],
           },
-          "quote",
+          "effort",
           true,
         ),
       );
@@ -172,7 +172,7 @@ export function BoardStage() {
             {
               id: "ask-owen",
               from: "agent",
-              text: "Card lands in Next, quote on the card. Wire POST /features with insightId and column next. Now stays empty unless someone drags it.",
+              text: "Add owner and effort on FeatureCard. Leave the date off.",
             },
           ],
         },
@@ -187,7 +187,7 @@ export function BoardStage() {
       dispatch({ type: "thread", person: "owen", thread: "owen" });
       await type(
         "owen",
-        "Column stays next on create. Copy quote when it exists. Still write the link when the quote is empty. Drag is the only way into Now.",
+        "Two fields on FeatureCard: owner and effort. Empty owner renders a dash. No date prop.",
       );
       if (dead()) return;
       dispatch({ type: "send", person: "owen" });
@@ -199,9 +199,9 @@ export function BoardStage() {
             agentId: "kit",
             cursor: "card",
             diff: FEATURE_DIFF,
-            terminal: ["pnpm test board/feature-from-insight", "  ✓ lands in next", "  ✓ now stays empty"],
+            terminal: ["pnpm test board/card-fields", "  ✓ owner renders", "  ✓ effort renders"],
           },
-          "link",
+          "blank",
           true,
         ),
       );
@@ -212,7 +212,7 @@ export function BoardStage() {
       dispatch({ type: "tab", person: "tereza", tab: "playbook" });
       await wait(600);
       if (dead()) return;
-      dispatch({ type: "add-step", missionId: "feature", label: "Empty insight" });
+      dispatch({ type: "add-step", missionId: "feature", label: "Empty owner" });
       await wait(900);
       if (dead()) return;
       patch("feature", (mission) => ({
@@ -221,14 +221,14 @@ export function BoardStage() {
         cursor: null,
         agentId: "ada",
         waits: { tereza: "qq", owen: "stake" },
-        terminal: [...mission.terminal, "  ✓ empty insight still links"],
+        terminal: [...mission.terminal, "  ✓ empty owner is a dash"],
         artifacts: [
           ...mission.artifacts,
           {
             id: "check",
             kind: "Check",
-            title: "feature-from-insight",
-            body: "lands in next · now stays empty · empty insight still links",
+            title: "card-fields",
+            body: "owner renders · effort renders · empty owner is a dash",
           },
         ],
         typing: "tereza",
@@ -244,7 +244,7 @@ export function BoardStage() {
           ...mission.threads,
           tereza: [
             ...mission.threads.tereza,
-            { id: "q2", from: "agent", text: "Karta sedí v Next. Bereme?" },
+            { id: "q2", from: "agent", text: "Owner a effort jsou na kartě. Bereme?" },
           ],
         },
       }));
@@ -833,41 +833,26 @@ function Files({
 function Desktop({ mission }: { mission: Mission }) {
   const phase = mission.desktop;
   const cursor =
-    mission.cursor === "button" ? { left: "38%", top: "46%" } : mission.cursor === "card" ? { left: "70%", top: "28%" } : null;
+    mission.cursor === "button" ? { left: "18%", top: "46%" } : mission.cursor === "card" ? { left: "18%", top: "64%" } : null;
   return (
     <div className="relative min-h-0 flex-1 overflow-hidden bg-[#f4f1ea] p-3">
-      <div className="grid h-full grid-cols-[1.1fr_0.7fr_0.7fr_0.7fr] gap-1.5 text-[10px]">
-        <div className="rounded-lg bg-white p-1.5">
-          <div className="mb-1 font-medium text-[#6d6d68]">Insights</div>
-          <div className="rounded-md border border-black/8 p-1.5">
-            <div className="font-medium text-[#1c1c1c]">Acme</div>
-            <div className="text-[#6d6d68]">Export dies after 200 rows</div>
-            {phase >= 1 ? (
-              <div className="mt-1 inline-flex rounded bg-[#1c1c1c] px-1.5 py-0.5 text-white">New feature</div>
-            ) : null}
+      <article className="rounded-xl bg-white p-3 shadow-sm">
+        <div className="text-[10px] font-medium uppercase tracking-wide text-[#8a8a84]">Feature</div>
+        <h3 className="mt-1 text-[15px] font-semibold leading-tight">Export limit</h3>
+        <p className="mt-1 text-[12px] leading-snug text-[#6d6d68]">Export dies after 200 rows</p>
+        {phase >= 1 ? (
+          <div className="mt-3 border-t border-black/8 pt-2">
+            <div className="text-[10px] text-[#8a8a84]">Owner</div>
+            <div className="text-[13px]">Mira</div>
           </div>
-          <div className="mt-1 rounded-md border border-black/8 p-1.5">
-            <div className="font-medium text-[#1c1c1c]">North</div>
-            <div className="text-[#a3a39c]">—</div>
+        ) : null}
+        {phase >= 2 ? (
+          <div className="mt-2">
+            <div className="text-[10px] text-[#8a8a84]">Effort</div>
+            <div className="text-[13px]">M</div>
           </div>
-        </div>
-        {["Now", "Next", "Later"].map((column) => (
-          <div key={column} className="rounded-lg bg-white/70 p-1.5">
-            <div className="mb-1 font-medium text-[#6d6d68]">{column}</div>
-            {column === "Next" && phase >= 2 ? (
-              <div className="rounded-md bg-white p-1.5 shadow-sm">
-                <div className="font-medium">Export limit</div>
-                <div className="text-[#6d6d68]">Export dies after 200 rows</div>
-              </div>
-            ) : null}
-            {column === "Next" && phase >= 3 ? (
-              <div className="mt-1 rounded-md border border-dashed border-[#d6d6d1] bg-white p-1.5">
-                <div className="font-medium">North</div>
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </div>
+        ) : null}
+      </article>
       {cursor && mission.agentId ? (
         <span
           className="pointer-events-none absolute text-[#1c1c1c] transition-all duration-700 ease-out"
