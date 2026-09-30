@@ -13,6 +13,9 @@ importers:
       '@cases/aurora':
         specifier: workspace:*
         version: link:../../cases/aurora
+      '@cases/board':
+        specifier: workspace:*
+        version: link:../../cases/board
       '@cases/legal-360':
         specifier: workspace:*
         version: link:../../cases/legal-360
@@ -55,6 +58,12 @@ importers:
         version: 5.9.3
 
   cases/aurora:
+    dependencies:
+      '@demo/runtime':
+        specifier: workspace:*
+        version: link:../../packages/demo-runtime
+
+  cases/board:
     dependencies:
       '@demo/runtime':
         specifier: workspace:*

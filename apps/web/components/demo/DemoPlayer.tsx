@@ -10,6 +10,7 @@ import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
 import { AuroraScene } from "./AuroraScene";
+import { BoardStage } from "./BoardStage";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -126,6 +127,14 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     () => scene.choices?.find((c) => c.variant === "primary"),
     [scene.choices],
   );
+
+  if (scene.app === "board") {
+    return (
+      <div className="flex min-h-0 w-full flex-1 flex-col">
+        <BoardStage />
+      </div>
+    );
+  }
 
   return (
     <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
