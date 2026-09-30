@@ -23,6 +23,29 @@ export default async function CasePage({
   const pathSceneId = scene?.[0];
   if (pathSceneId && !demoCase.sceneById[pathSceneId]) notFound();
 
+  const desk = demoCase.meta.id === "rooms";
+
+  if (desk) {
+    return (
+      <main className="flex h-dvh flex-col">
+        <header className="flex h-8 shrink-0 items-center px-3">
+          <Link href="/" className="text-[11px] text-[var(--stage-muted)]">
+            All demos
+          </Link>
+        </header>
+        <Suspense
+          fallback={
+            <div className="flex flex-1 items-center justify-center text-sm text-[var(--stage-muted)]">
+              Loading demo…
+            </div>
+          }
+        >
+          <DemoPlayer demoCase={demoCase} />
+        </Suspense>
+      </main>
+    );
+  }
+
   return (
     <main className="flex flex-1 flex-col">
       <header className="px-4 pt-8 text-center">
