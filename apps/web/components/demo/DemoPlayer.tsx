@@ -10,6 +10,7 @@ import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
 import { AuroraScene } from "./AuroraScene";
+import { RoomsScene } from "./RoomsScene";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -179,6 +180,16 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onAdvance={scene.next ? advance : undefined}
             onGo={go}
             onBack={canBack ? back : undefined}
+          />
+        ) : null}
+        {scene.app === "rooms" ? (
+          <RoomsScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
           />
         ) : null}
       </PhoneFrame>

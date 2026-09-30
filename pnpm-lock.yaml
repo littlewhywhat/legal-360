@@ -16,6 +16,9 @@ importers:
       '@cases/legal-360':
         specifier: workspace:*
         version: link:../../cases/legal-360
+      '@cases/rooms':
+        specifier: workspace:*
+        version: link:../../cases/rooms
       '@demo/runtime':
         specifier: workspace:*
         version: link:../../packages/demo-runtime
@@ -61,6 +64,12 @@ importers:
         version: link:../../packages/demo-runtime
 
   cases/legal-360:
+    dependencies:
+      '@demo/runtime':
+        specifier: workspace:*
+        version: link:../../packages/demo-runtime
+
+  cases/rooms:
     dependencies:
       '@demo/runtime':
         specifier: workspace:*
