@@ -27,6 +27,7 @@
   .animate-slide-up,
   .animate-banner-in,
   .animate-soft-pulse,
+  .animate-idle,
   .animate-pop-in {
     animation: none !important;
   }
@@ -85,6 +86,10 @@
 
 .animate-soft-pulse {
   animation: soft-pulse 1.4s ease-in-out infinite;
+}
+
+.animate-idle {
+  animation: soft-pulse 2.8s ease-in-out infinite;
 }
 
 .animate-pop-in {

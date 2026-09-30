@@ -4,60 +4,66 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { Choice } from "@demo/runtime";
 
 type FilterId = "all" | "qq" | "dq" | "play";
-
+type Who = { kind: "bot" | "human"; name: string; when?: string };
+type Agent = { name: string; state: "free" | "busy"; on?: string };
+type Cast = { id: string; name: string; role: string; lang: string };
+type Talk = Cast & { line: string; agent: string };
+type StepState = { label: string; state: "done" | "now" | "next" };
+type RoomMission = {
+  title: string;
+  book: string;
+  step: string;
+  who: Who;
+  scene: string;
+};
 type ListRow = {
   id: string;
   filter: "qq" | "dq" | "play";
   room: string;
+  roomScene: string;
   title: string;
-  detail: string;
+  who: Who;
 };
-
-type Person = {
-  id: string;
-  name: string;
-  role: string;
-  lang: string;
-  line: string;
-  agent: string;
-};
-
-type Agent = { name: string; state: "free" | "busy"; on?: string };
-
-type StepState = { label: string; state: "done" | "now" | "next" };
-
 type RoomOpt = { id: string; name: string; context: string };
 type BookOpt = { id: string; name: string; steps: string[]; artifact: string };
+type Incoming = { title: string; book: string; step: string; agent: string };
 
 type RoomsPayload = {
-  mode: "list" | "qq" | "dq" | "watch" | "create" | "boot" | "checkpoint" | "end" | "result";
-  you?: string;
-  role?: string;
-  rooms?: string[] | RoomOpt[];
+  mode: "list" | "qq" | "dq" | "room" | "thread" | "create" | "checkpoint" | "result";
+  nav?: string;
   rows?: ListRow[];
   room?: string;
   mission?: string;
-  lang?: string;
-  agent?: string;
-  prompt?: string;
-  poolNote?: string;
-  slot?: string;
-  with?: string;
-  ask?: string;
+  from?: { name: string; lang: string; text: string };
+  reply?: string;
+  speaker?: { name: string; lang: string };
+  who?: string;
+  when?: string;
+  text?: string;
+  artifact?: string;
+  name?: string;
   context?: string;
-  youId?: string;
+  people?: Cast[] | Talk[];
+  agents?: Agent[];
+  missions?: RoomMission[];
+  incoming?: Incoming;
+  book?: string;
   steps?: StepState[] | string[];
   artifacts?: string[];
-  agents?: Agent[];
-  people?: Person[];
+  youId?: string;
+  prompt?: string;
+  rooms?: RoomOpt[];
   books?: BookOpt[];
-  playbook?: string;
-  artifact?: string;
   insert?: string;
   tone?: "done" | "garbage";
-  headline?: string;
-  detail?: string;
 };
+
+const NAV = [
+  { id: "list", label: "My list", scene: "s1-list" },
+  { id: "checkout", label: "Checkout", scene: "s-room-checkout" },
+  { id: "onboarding", label: "Onboarding", scene: "s-room-onboarding" },
+  { id: "billing", label: "Billing", scene: "s-room-billing" },
+];
 
 const FILTERS: { id: FilterId; label: string }[] = [
   { id: "all", label: "All" },
@@ -68,6 +74,25 @@ const FILTERS: { id: FilterId; label: string }[] = [
 
 function pickChoice(choices: Choice[] | undefined, id: string) {
   return choices?.find((choice) => choice.id === id);
+}
+
+function useTypewriter(text: string) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let i = 0;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduce) {
+      const jump = window.setTimeout(() => setN(text.length), 0);
+      return () => window.clearTimeout(jump);
+    }
+    const timer = window.setInterval(() => {
+      i += 1;
+      setN(Math.min(i, text.length));
+      if (i >= text.length) window.clearInterval(timer);
+    }, 28);
+    return () => window.clearInterval(timer);
+  }, [text]);
+  return { shown: text.slice(0, n), done: text.length > 0 && n >= text.length };
 }
 
 function kindStyle(filter: ListRow["filter"]) {
@@ -82,110 +107,180 @@ function kindLabel(filter: ListRow["filter"]) {
   return "In play";
 }
 
-function Pool({
-  agents,
-  note,
-}: {
-  agents: Agent[];
-  note?: string;
-}) {
+function WhoMark({ who }: { who: Who }) {
+  const live = who.kind === "bot";
   return (
-    <div className="rounded-lg bg-[#f4f7f5] px-2.5 py-2">
-      <div className="text-[10px] font-medium uppercase tracking-wider text-[#6b7280]">
+    <span className="inline-flex items-center gap-1.5 text-[13px] text-[#44403c]">
+      <span
+        className={[
+          "h-2 w-2 rounded-full",
+          live ? "animate-soft-pulse bg-[#059669]" : "bg-[#d97706]",
+        ].join(" ")}
+      />
+      <span>{who.name}</span>
+      {who.when ? <span className="text-[#78716c]">{who.when}</span> : null}
+    </span>
+  );
+}
+
+function Pool({ agents }: { agents: Agent[] }) {
+  return (
+    <section className="rounded-xl bg-white p-4 ring-1 ring-black/5">
+      <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#78716c]">
         Agent pool
-      </div>
-      <ul className="mt-1 space-y-1">
-        {agents.map((agent) => (
-          <li key={agent.name} className="flex items-center gap-1.5 text-[11px] text-[#1f2937]">
-            <span
-              className={[
-                "h-1.5 w-1.5 rounded-full",
-                agent.state === "busy" ? "animate-soft-pulse bg-[#059669]" : "bg-[#9ca3af]",
-              ].join(" ")}
-            />
-            <span className="font-medium">{agent.name}</span>
-            <span className="text-[#6b7280]">
-              {agent.state === "busy" ? `on ${agent.on}` : "free"}
-            </span>
-          </li>
-        ))}
+      </h2>
+      <ul className="mt-3 space-y-2.5">
+        {agents.map((agent) => {
+          const busy = agent.state === "busy";
+          return (
+            <li key={agent.name} className="flex items-center gap-2 text-[14px]">
+              <span
+                className={[
+                  "h-2.5 w-2.5 rounded-full",
+                  busy
+                    ? "animate-soft-pulse bg-[#059669]"
+                    : "animate-idle bg-[#6ee7b7]",
+                ].join(" ")}
+              />
+              <span className="font-medium">{agent.name}</span>
+              <span className="text-[#78716c]">{busy ? agent.on : "free"}</span>
+            </li>
+          );
+        })}
       </ul>
-      {note ? <p className="mt-1 text-[10px] text-[#6b7280]">{note}</p> : null}
+    </section>
+  );
+}
+
+function PromptBox({
+  text,
+  action,
+  onAction,
+}: {
+  text: string;
+  action: string;
+  onAction: () => void;
+}) {
+  const typed = useTypewriter(text);
+  return (
+    <div>
+      <div className="min-h-[72px] rounded-lg bg-white px-3 py-2 text-[14px] leading-relaxed ring-1 ring-black/10">
+        <span>{typed.shown}</span>
+        {typed.done ? null : (
+          <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-soft-pulse bg-[#1c1917]" />
+        )}
+      </div>
+      <button
+        type="button"
+        disabled={!typed.done}
+        onClick={onAction}
+        className="mt-2 rounded-lg bg-[#065f46] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+      >
+        {action}
+      </button>
     </div>
   );
 }
 
-function StepRail({ labels, active }: { labels: string[]; active?: string }) {
+function Sidebar({
+  nav,
+  onGo,
+}: {
+  nav?: string;
+  onGo: (id: string) => void;
+}) {
   return (
-    <ol className="flex flex-wrap gap-1">
-      {labels.map((label) => {
-        const on = label === active;
-        return (
-          <li
-            key={label}
-            className={[
-              "rounded-full px-2 py-0.5 text-[10px] font-medium",
-              on ? "bg-[#065f46] text-white" : "bg-[#ecfdf5] text-[#065f46]",
-            ].join(" ")}
-          >
-            {label}
-          </li>
-        );
-      })}
-    </ol>
+    <aside className="flex w-[200px] shrink-0 flex-col border-r border-black/5 bg-white">
+      <div className="px-4 py-4 text-[15px] font-semibold">Rooms</div>
+      <nav className="flex flex-col gap-0.5 px-2">
+        {NAV.map((item, index) => {
+          const on = nav === item.id;
+          return (
+            <div key={item.id}>
+              {index === 1 ? (
+                <div className="px-2 pb-1 pt-3 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#a8a29e]">
+                  Rooms
+                </div>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onGo(item.scene)}
+                className={[
+                  "w-full rounded-lg px-2.5 py-2 text-left text-[13px]",
+                  on ? "bg-[#ecfdf5] font-semibold text-[#065f46]" : "text-[#44403c] hover:bg-[#f5f5f4]",
+                ].join(" ")}
+              >
+                {item.label}
+              </button>
+            </div>
+          );
+        })}
+      </nav>
+      <div className="mt-auto border-t border-black/5 px-4 py-3 text-[12px] text-[#78716c]">
+        Jordan · en
+      </div>
+    </aside>
   );
 }
 
-function Screen({
-  kicker,
+function Shell({
+  nav,
+  onGo,
   title,
+  extra,
   children,
-  footer,
 }: {
-  kicker: string;
+  nav?: string;
+  onGo: (id: string) => void;
   title: string;
+  extra?: ReactNode;
   children: ReactNode;
-  footer?: ReactNode;
 }) {
+  const showNew = title !== "Trial expiry email";
   return (
-    <div className="flex h-full flex-col bg-[#f7f6f3] text-[#1c1917]">
-      <header className="shrink-0 border-b border-black/5 px-3 pb-2 pt-1">
-        <div className="text-[10px] font-medium uppercase tracking-wider text-[#78716c]">
-          {kicker}
-        </div>
-        <div className="text-[15px] font-semibold leading-tight">{title}</div>
-      </header>
-      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-2">{children}</div>
-      {footer ? <div className="shrink-0 border-t border-black/5 px-3 py-2">{footer}</div> : null}
+    <div className="flex h-full bg-[#f4f3ef] text-[#1c1917]">
+      <Sidebar nav={nav} onGo={onGo} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="flex items-center justify-between border-b border-black/5 px-6 py-3">
+          <h1 className="text-[18px] font-semibold">{title}</h1>
+          <div className="flex items-center gap-2">
+            {extra}
+            {showNew ? (
+              <button
+                type="button"
+                onClick={() => onGo("s6-create")}
+                className="rounded-lg bg-[#1c1917] px-3 py-1.5 text-[13px] font-semibold text-white"
+              >
+                New mission
+              </button>
+            ) : null}
+          </div>
+        </header>
+        <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+      </div>
     </div>
   );
 }
 
-function PrimaryButton({
-  label,
-  onClick,
-  tone = "primary",
-}: {
-  label: string;
-  onClick: () => void;
-  tone?: "primary" | "danger" | "ghost";
-}) {
-  const cls =
-    tone === "danger"
-      ? "bg-[#b91c1c] text-white"
-      : tone === "ghost"
-        ? "bg-white text-[#44403c] ring-1 ring-black/10"
-        : "bg-[#065f46] text-white";
+function Composer({ person }: { person: Talk }) {
+  const [sent, setSent] = useState(false);
+  if (sent) {
+    return (
+      <div className="rounded-xl bg-[#ecfdf5] px-3 py-2">
+        <div className="text-[11px] font-semibold text-[#065f46]">
+          {person.name} · {person.lang}
+        </div>
+        <p className="mt-1 text-[14px] leading-relaxed">{person.line}</p>
+      </div>
+    );
+  }
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={["w-full rounded-lg px-3 py-2 text-[13px] font-semibold active:scale-[0.99]", cls].join(
-        " ",
-      )}
-    >
-      {label}
-    </button>
+    <div>
+      <div className="mb-1 text-[11px] font-semibold text-[#065f46]">
+        {person.name} · {person.lang}
+      </div>
+      <PromptBox text={person.line} action="Send" onAction={() => setSent(true)} />
+    </div>
   );
 }
 
@@ -203,428 +298,522 @@ export function RoomsScene({
   onGo: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<FilterId>("all");
-  const [personId, setPersonId] = useState(payload.you ?? "jordan");
-  const [roomId, setRoomId] = useState("helios");
-  const [bookId, setBookId] = useState("redline");
+  const [roomId, setRoomId] = useState("checkout");
+  const [bookId, setBookId] = useState("decide");
   const [added, setAdded] = useState(false);
   const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    if (payload.mode !== "boot") return;
+    if (payload.mode !== "room" || !payload.incoming) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce) {
-      const jump = window.setTimeout(() => setPhase(4), 0);
+      const jump = window.setTimeout(() => setPhase(2), 0);
       return () => window.clearTimeout(jump);
     }
     let current = 0;
     const timer = window.setInterval(() => {
       current += 1;
       setPhase(current);
-      if (current >= 4) window.clearInterval(timer);
-    }, 650);
+      if (current >= 2) window.clearInterval(timer);
+    }, 700);
     return () => window.clearInterval(timer);
-  }, [payload.mode]);
+  }, [payload.mode, payload.incoming]);
 
   if (payload.mode === "list" && payload.rows) {
-    const roomNames = (payload.rooms as string[]) ?? [];
     const visible = payload.rows.filter((row) => filter === "all" || row.filter === filter);
-    const start = pickChoice(choices, "new");
     return (
-      <Screen
-        kicker={`${payload.you} · ${payload.role}`}
-        title="My list"
-        footer={
-          start ? (
-            <PrimaryButton label="New mission" onClick={() => onChoice(start)} />
-          ) : null
-        }
-      >
-        <p className="text-[11px] leading-snug text-[#78716c]">{roomNames.join(" · ")}</p>
-        <div className="mt-2 flex gap-1">
-          {FILTERS.map((item) => {
-            const on = filter === item.id;
-            const count =
-              item.id === "all"
-                ? payload.rows!.length
-                : payload.rows!.filter((row) => row.filter === item.id).length;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setFilter(item.id)}
-                className={[
-                  "rounded-full px-2 py-1 text-[10px] font-semibold",
-                  on ? "bg-[#1c1917] text-white" : "bg-white text-[#57534e] ring-1 ring-black/10",
-                ].join(" ")}
-              >
-                {item.label} {count}
-              </button>
-            );
-          })}
-        </div>
-        <ul className="mt-2 space-y-1.5">
-          {visible.map((row) => {
-            const choice = pickChoice(choices, row.id);
-            return (
-              <li key={row.id}>
+      <Shell nav={payload.nav} onGo={onGo} title="My list">
+        <div className="px-6 py-4">
+          <div className="flex gap-1.5">
+            {FILTERS.map((item) => {
+              const on = filter === item.id;
+              const count =
+                item.id === "all"
+                  ? payload.rows!.length
+                  : payload.rows!.filter((row) => row.filter === item.id).length;
+              return (
                 <button
+                  key={item.id}
                   type="button"
-                  onClick={() => choice && onChoice(choice)}
-                  className="flex w-full flex-col rounded-lg bg-white px-2.5 py-2 text-left ring-1 ring-black/5 active:bg-[#fafaf9]"
+                  onClick={() => setFilter(item.id)}
+                  className={[
+                    "rounded-full px-3 py-1 text-[12px] font-semibold",
+                    on ? "bg-[#1c1917] text-white" : "bg-white text-[#57534e] ring-1 ring-black/10",
+                  ].join(" ")}
                 >
-                  <span className="flex items-center gap-1.5">
+                  {item.label} {count}
+                </button>
+              );
+            })}
+          </div>
+          <ul className="mt-4 overflow-hidden rounded-xl bg-white ring-1 ring-black/5">
+            {visible.map((row) => {
+              const choice = pickChoice(choices, row.id);
+              return (
+                <li key={row.id} className="flex items-center gap-3 border-b border-black/5 px-4 py-3 last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => choice && onChoice(choice)}
+                    className="flex min-w-0 flex-1 items-center gap-3 text-left"
+                  >
                     <span
                       className={[
-                        "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                        "rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                         kindStyle(row.filter),
                       ].join(" ")}
                     >
                       {kindLabel(row.filter)}
                     </span>
-                    <span className="text-[10px] text-[#78716c]">{row.room}</span>
-                  </span>
-                  <span className="mt-1 text-[13px] font-semibold">{row.title}</span>
-                  <span className="text-[11px] text-[#78716c]">{row.detail}</span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      </Screen>
+                    <span className="text-[15px] font-medium">{row.title}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onGo(row.roomScene)}
+                    className="text-[13px] text-[#0f766e] underline-offset-2 hover:underline"
+                  >
+                    {row.room}
+                  </button>
+                  <WhoMark who={row.who} />
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </Shell>
     );
   }
 
-  if (payload.mode === "qq") {
-    const answer = pickChoice(choices, "answer");
+  if (payload.mode === "qq" && payload.from && payload.reply && payload.speaker) {
+    const send = pickChoice(choices, "send");
     return (
-      <Screen
-        kicker={`${payload.room} · ${payload.lang}`}
-        title={payload.mission ?? "QQ"}
-        footer={
-          answer ? (
-            <PrimaryButton label={answer.label} onClick={() => onChoice(answer)} />
-          ) : null
-        }
-      >
-        <div className="animate-banner-in rounded-lg bg-[#065f46] px-2.5 py-2 text-white">
-          <div className="text-[10px] font-bold uppercase tracking-wider">QQ · answer now</div>
-          <p className="mt-1 text-[12px] leading-snug">{payload.prompt}</p>
+      <Shell nav={payload.nav} onGo={onGo} title={payload.mission ?? "QQ"}>
+        <div className="mx-auto flex max-w-xl flex-col gap-3 px-6 py-6">
+          <div className="text-[12px] text-[#78716c]">{payload.room}</div>
+          <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-black/5">
+            <div className="text-[11px] font-semibold text-[#065f46]">
+              {payload.from.name} · {payload.from.lang}
+            </div>
+            <p className="mt-1 text-[14px]">{payload.from.text}</p>
+          </div>
+          <div>
+            <div className="mb-1 text-[11px] font-semibold text-[#065f46]">
+              {payload.speaker.name} · {payload.speaker.lang}
+            </div>
+            {send ? (
+              <PromptBox text={payload.reply} action={send.label} onAction={() => onChoice(send)} />
+            ) : null}
+          </div>
         </div>
-        <p className="mt-2 text-[11px] text-[#78716c]">
-          Private thread · {payload.you}. Klára and Marek do not see this.
-        </p>
-        <div className="mt-2">
-          <Pool
-            agents={[{ name: payload.agent ?? "Ada", state: "busy", on: payload.mission }]}
-            note={payload.poolNote}
-          />
-        </div>
-      </Screen>
+      </Shell>
     );
   }
 
   if (payload.mode === "dq") {
     const slot = pickChoice(choices, "slot");
     return (
-      <Screen
-        kicker={payload.room ?? "Room"}
-        title={payload.mission ?? "DQ"}
-        footer={
-          slot ? <PrimaryButton label={slot.label} onClick={() => onChoice(slot)} /> : null
-        }
-      >
-        <div className="rounded-lg bg-[#fffbeb] px-2.5 py-2 ring-1 ring-[#fcd34d]">
-          <div className="text-[10px] font-bold uppercase tracking-wider text-[#92400e]">
-            DQ · slot {payload.slot}
-          </div>
-          <p className="mt-1 text-[12px] font-medium text-[#78350f]">With {payload.with}</p>
-          <p className="mt-1 text-[12px] leading-snug text-[#44403c]">{payload.ask}</p>
-        </div>
-        <p className="mt-2 text-[11px] leading-snug text-[#78716c]">
-          This does not ping you. It waits on the slot.
-        </p>
-        <div className="mt-2">
-          <Pool agents={[{ name: "Ada", state: "free" }]} note={payload.poolNote} />
-        </div>
-      </Screen>
-    );
-  }
-
-  if (payload.mode === "watch" && payload.people && payload.steps && payload.agents) {
-    const people = payload.people;
-    const selected = people.find((person) => person.id === personId) ?? people[0];
-    const labels = (payload.steps as StepState[]).map((step) => step.label);
-    const now = (payload.steps as StepState[]).find((step) => step.state === "now")?.label;
-    const start = pickChoice(choices, "new");
-    return (
-      <Screen
-        kicker={payload.room ?? "Room"}
-        title={payload.mission ?? "Mission"}
-        footer={
-          start ? <PrimaryButton label={start.label} onClick={() => onChoice(start)} /> : null
-        }
-      >
-        <p className="text-[11px] text-[#78716c]">{payload.context}</p>
-        <div className="mt-2">
-          <StepRail labels={labels} active={now} />
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {(payload.artifacts ?? []).map((artifact) => (
-            <span
-              key={artifact}
-              className="rounded bg-white px-1.5 py-0.5 text-[10px] text-[#44403c] ring-1 ring-black/10"
-            >
-              {artifact}
-            </span>
-          ))}
-        </div>
-        <div className="mt-2">
-          <Pool agents={payload.agents} />
-        </div>
-        <div className="mt-2 flex gap-1">
-          {people.map((person) => {
-            const on = person.id === selected.id;
-            return (
-              <button
-                key={person.id}
-                type="button"
-                onClick={() => setPersonId(person.id)}
-                className={[
-                  "flex-1 rounded-lg px-1 py-1 text-center ring-1",
-                  on ? "bg-[#ecfdf5] ring-[#065f46]" : "bg-white ring-black/10",
-                ].join(" ")}
-              >
-                <span className="block text-[11px] font-semibold">{person.name}</span>
-                <span className="block text-[9px] uppercase text-[#78716c]">
-                  {person.lang} · {person.role}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-2 space-y-1.5">
-          <div className="rounded-lg bg-white px-2.5 py-2 ring-1 ring-black/5">
-            <div className="text-[10px] font-semibold text-[#065f46]">
-              {selected.name} · private · {selected.lang}
+      <Shell nav={payload.nav} onGo={onGo} title={payload.mission ?? "DQ"}>
+        <div className="px-6 py-6">
+          <button
+            type="button"
+            onClick={() => slot && onChoice(slot)}
+            className="flex w-full max-w-3xl overflow-hidden rounded-xl bg-white text-left ring-1 ring-[#fcd34d]"
+          >
+            <div className="flex w-36 shrink-0 flex-col justify-center bg-[#fffbeb] px-4 py-5">
+              <div className="text-[12px] font-semibold uppercase tracking-wide text-[#92400e]">DQ</div>
+              <div className="mt-1 text-[18px] font-semibold text-[#78350f]">{payload.when}</div>
+              <div className="mt-1 text-[13px] text-[#92400e]">{payload.who}</div>
             </div>
-            <p className="mt-1 text-[12px] leading-snug">{selected.line}</p>
-          </div>
-          <div className="rounded-lg bg-[#ecfdf5] px-2.5 py-2">
-            <div className="text-[10px] font-semibold text-[#065f46]">Ada · {selected.lang}</div>
-            <p className="mt-1 text-[12px] leading-snug">{selected.agent}</p>
-          </div>
-          <p className="text-[10px] text-[#78716c]">
-            Only {selected.name} sees this thread. The others keep their own.
-          </p>
+            <div className="px-5 py-5">
+              <div className="text-[12px] text-[#78716c]">{payload.room}</div>
+              <p className="mt-1 text-[16px]">{payload.text}</p>
+              {payload.artifact ? (
+                <span className="mt-3 inline-block rounded bg-[#f5f5f4] px-2 py-1 text-[12px] text-[#44403c]">
+                  {payload.artifact}
+                </span>
+              ) : null}
+            </div>
+          </button>
         </div>
-      </Screen>
+      </Shell>
     );
   }
 
-  if (payload.mode === "create" && payload.rooms && payload.books && payload.mission) {
-    const roomOpts = payload.rooms as RoomOpt[];
+  if (payload.mode === "room" && payload.agents && payload.missions && payload.people) {
+    const incoming = payload.incoming;
+    const showRow = !!incoming && phase >= 1;
+    const agents = payload.agents.map((agent) => {
+      if (incoming && phase >= 2 && agent.name === incoming.agent) {
+        return { ...agent, state: "busy" as const, on: incoming.title };
+      }
+      return agent;
+    });
+    const people = payload.people as Cast[];
+    return (
+      <Shell nav={payload.nav} onGo={onGo} title={payload.name ?? "Room"}>
+        <div className="px-6 py-5">
+          <p className="text-[13px] text-[#78716c]">{payload.context}</p>
+          <ul className="mt-3 flex gap-2">
+            {people.map((person) => (
+              <li
+                key={person.id}
+                className="rounded-lg bg-white px-3 py-2 ring-1 ring-black/5"
+              >
+                <div className="text-[13px] font-semibold">{person.name}</div>
+                <div className="text-[11px] uppercase tracking-wide text-[#78716c]">
+                  {person.role} · {person.lang}
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-5 grid grid-cols-[240px_minmax(0,1fr)] gap-4">
+            <Pool agents={agents} />
+            <ul className="overflow-hidden rounded-xl bg-white ring-1 ring-black/5">
+              {payload.missions.map((mission) => (
+                <li key={mission.title} className="border-b border-black/5 last:border-b-0">
+                  <button
+                    type="button"
+                    onClick={() => onGo(mission.scene)}
+                    className="flex w-full items-center gap-4 px-4 py-3 text-left hover:bg-[#fafaf9]"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-medium">{mission.title}</span>
+                      <span className="text-[12px] text-[#78716c]">
+                        {mission.book} · {mission.step}
+                      </span>
+                    </span>
+                    <WhoMark who={mission.who} />
+                  </button>
+                </li>
+              ))}
+              {showRow && incoming ? (
+                <li className="animate-pop-in border-t border-black/5">
+                  <button
+                    type="button"
+                    onClick={onAdvance}
+                    className="flex w-full items-center gap-4 bg-[#ecfdf5] px-4 py-3 text-left"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-[14px] font-medium">{incoming.title}</span>
+                      <span className="text-[12px] text-[#78716c]">
+                        {incoming.book} · {incoming.step}
+                      </span>
+                    </span>
+                    <WhoMark who={{ kind: "bot", name: incoming.agent }} />
+                  </button>
+                </li>
+              ) : null}
+            </ul>
+          </div>
+        </div>
+      </Shell>
+    );
+  }
+
+  if (payload.mode === "thread" && payload.people && payload.steps) {
+    return (
+      <ThreadScreen payload={payload} onGo={onGo} />
+    );
+  }
+
+  if (payload.mode === "create" && payload.rooms && payload.books && payload.prompt && payload.mission) {
+    const roomOpts = payload.rooms;
     const bookOpts = payload.books;
     const room = roomOpts.find((item) => item.id === roomId) ?? roomOpts[0];
     const book = bookOpts.find((item) => item.id === bookId) ?? bookOpts[0];
     return (
-      <Screen
-        kicker="New mission"
-        title={payload.mission}
-        footer={
-          <PrimaryButton
-            label={`Start · ${room.name}`}
-            onClick={() => onGo(`s6-boot-${room.id}-${book.id}`)}
-          />
-        }
-      >
-        <div className="text-[10px] font-medium uppercase tracking-wider text-[#78716c]">Room</div>
-        <div className="mt-1 space-y-1">
-          {roomOpts.map((item) => {
-            const on = item.id === room.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setRoomId(item.id)}
-                className={[
-                  "block w-full rounded-lg px-2.5 py-1.5 text-left ring-1",
-                  on ? "bg-[#ecfdf5] ring-[#065f46]" : "bg-white ring-black/10",
-                ].join(" ")}
-              >
-                <span className="block text-[12px] font-semibold">{item.name}</span>
-                <span className="block text-[10px] leading-snug text-[#78716c]">{item.context}</span>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-2 text-[10px] font-medium uppercase tracking-wider text-[#78716c]">
-          Playbook
-        </div>
-        <div className="mt-1 flex flex-col gap-1">
-          {bookOpts.map((item) => {
-            const on = item.id === book.id;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => setBookId(item.id)}
-                className={[
-                  "rounded-lg px-2.5 py-1.5 text-left text-[12px] font-semibold ring-1",
-                  on ? "bg-[#1c1917] text-white ring-[#1c1917]" : "bg-white text-[#1c1917] ring-black/10",
-                ].join(" ")}
-              >
-                {item.name}
-                <span className={["mt-0.5 block text-[10px] font-normal", on ? "text-white/70" : "text-[#78716c]"].join(" ")}>
-                  {item.steps.join(" → ")}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </Screen>
-    );
-  }
-
-  if (payload.mode === "boot") {
-    const steps = (payload.steps as string[]) ?? [];
-    const showSteps = phase >= 1;
-    const showAgent = phase >= 2;
-    const showArtifact = phase >= 3;
-    return (
-      <Screen
-        kicker={payload.room ?? "Room"}
-        title={payload.mission ?? "Mission"}
-        footer={
-          phase >= 4 && onAdvance ? (
-            <PrimaryButton label="Open the playbook" onClick={onAdvance} />
-          ) : (
-            <p className="text-center text-[11px] text-[#78716c]">Starting…</p>
-          )
-        }
-      >
-        <p className="text-[11px] text-[#78716c]">{payload.playbook}</p>
-        <div className="mt-3 space-y-2">
-          {showSteps ? (
-            <div className="animate-pop-in">
-              <StepRail labels={steps} active={steps[0]} />
-            </div>
-          ) : (
-            <div className="h-6" />
-          )}
-          {showAgent ? (
-            <div className="animate-pop-in">
-              <Pool
-                agents={[
-                  { name: "Ada", state: "busy", on: payload.mission },
-                  { name: "Noa", state: "free" },
-                ]}
-                note="Ada left the pool for this mission. Noa stays free."
-              />
-            </div>
-          ) : (
-            <Pool
-              agents={[
-                { name: "Ada", state: "free" },
-                { name: "Noa", state: "free" },
-              ]}
-            />
-          )}
-          {showArtifact ? (
-            <div className="animate-slide-up rounded-lg bg-white px-2.5 py-2 ring-1 ring-[#065f46]/30">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-[#065f46]">
-                Artifact
-              </div>
-              <p className="mt-1 text-[12px]">{payload.artifact}</p>
-            </div>
-          ) : null}
-        </div>
-      </Screen>
+      <Shell nav={payload.nav} onGo={onGo} title={payload.mission}>
+        <CreateBody
+          prompt={payload.prompt}
+          roomOpts={roomOpts}
+          bookOpts={bookOpts}
+          room={room}
+          book={book}
+          onRoom={setRoomId}
+          onBook={setBookId}
+          onStart={() => onGo(`s7-boot-${room.id}-${book.id}`)}
+        />
+      </Shell>
     );
   }
 
   if (payload.mode === "checkpoint") {
     const base = (payload.steps as string[]) ?? [];
-    const insert = payload.insert ?? "Local counsel";
-    const labels = added ? [...base.slice(0, -1), insert, base[base.length - 1]] : base;
-    const finish = pickChoice(choices, "finish");
-    return (
-      <Screen
-        kicker={`${payload.room} · ${payload.playbook}`}
-        title={payload.mission ?? "Playbook"}
-        footer={
-          <div className="space-y-1.5">
-            <PrimaryButton
-              label={added ? `${insert} added` : `Add “${insert}”`}
-              tone={added ? "ghost" : "primary"}
-              onClick={() => setAdded(true)}
-            />
-            {finish ? (
-              <PrimaryButton label={finish.label} tone="ghost" onClick={() => onChoice(finish)} />
-            ) : null}
-          </div>
-        }
-      >
-        <ol className="space-y-1.5">
-          {labels.map((label) => {
-            const fresh = added && label === insert;
-            return (
-              <li
-                key={label}
-                className={[
-                  "rounded-lg px-2.5 py-2 text-[13px] font-medium ring-1",
-                  fresh
-                    ? "animate-pop-in bg-[#ecfdf5] text-[#065f46] ring-[#065f46]"
-                    : "bg-white text-[#1c1917] ring-black/10",
-                ].join(" ")}
-              >
-                {label}
-              </li>
-            );
-          })}
-        </ol>
-      </Screen>
-    );
-  }
-
-  if (payload.mode === "end") {
+    const insert = payload.insert ?? "Design review";
+    const labels = added ? [...base.slice(0, -1), insert, base[base.length - 1] ?? insert] : base;
     const done = pickChoice(choices, "done");
     const garbage = pickChoice(choices, "garbage");
     return (
-      <Screen kicker={payload.room ?? "Mission"} title={payload.mission ?? "Close"}>
-        <p className="text-[12px] leading-snug text-[#57534e]">
-          No owner left on the loop. Close it. The artifacts stay either way.
-        </p>
-        <div className="mt-3 space-y-1.5">
-          {done ? <PrimaryButton label={done.label} onClick={() => onChoice(done)} /> : null}
-          {garbage ? (
-            <PrimaryButton label={garbage.label} tone="danger" onClick={() => onChoice(garbage)} />
+      <Shell nav={payload.nav} onGo={onGo} title={payload.mission ?? "Playbook"}>
+        <div className="mx-auto max-w-lg px-6 py-6">
+          <div className="text-[13px] text-[#78716c]">
+            {payload.room} · {payload.book}
+          </div>
+          {payload.artifact ? (
+            <span className="mt-3 inline-block rounded bg-white px-2 py-1 text-[12px] ring-1 ring-black/10">
+              {payload.artifact}
+            </span>
           ) : null}
+          <ol className="mt-4 space-y-2">
+            {labels.map((label) => {
+              const fresh = added && label === insert;
+              return (
+                <li
+                  key={label}
+                  className={[
+                    "rounded-lg px-3 py-2 text-[14px] font-medium ring-1",
+                    fresh
+                      ? "animate-pop-in bg-[#ecfdf5] text-[#065f46] ring-[#065f46]"
+                      : "bg-white ring-black/10",
+                  ].join(" ")}
+                >
+                  {label}
+                </li>
+              );
+            })}
+          </ol>
+          <div className="mt-4 flex gap-2">
+            <button
+              type="button"
+              onClick={() => setAdded(true)}
+              className="rounded-lg bg-[#065f46] px-3 py-2 text-[13px] font-semibold text-white"
+            >
+              {insert}
+            </button>
+            {added && done ? (
+              <button
+                type="button"
+                onClick={() => onChoice(done)}
+                className="rounded-lg bg-[#1c1917] px-3 py-2 text-[13px] font-semibold text-white"
+              >
+                {done.label}
+              </button>
+            ) : null}
+            {added && garbage ? (
+              <button
+                type="button"
+                onClick={() => onChoice(garbage)}
+                className="rounded-lg bg-[#b91c1c] px-3 py-2 text-[13px] font-semibold text-white"
+              >
+                {garbage.label}
+              </button>
+            ) : null}
+          </div>
         </div>
-      </Screen>
+      </Shell>
     );
   }
 
   if (payload.mode === "result") {
     const garbage = payload.tone === "garbage";
     return (
-      <Screen
-        kicker="Mission"
-        title={payload.headline ?? "Closed"}
-        footer={
-          onAdvance ? <PrimaryButton label="Replay" tone="ghost" onClick={onAdvance} /> : null
-        }
-      >
-        <div
-          className={[
-            "rounded-lg px-2.5 py-3 text-[13px] leading-snug",
-            garbage ? "bg-[#fef2f2] text-[#7f1d1d]" : "bg-[#ecfdf5] text-[#064e3b]",
-          ].join(" ")}
-        >
-          {payload.detail}
+      <Shell nav={payload.nav} onGo={onGo} title={payload.mission ?? "Mission"}>
+        <div className="px-6 py-8">
+          <div
+            className={[
+              "inline-block rounded-lg px-3 py-1 text-[13px] font-semibold",
+              garbage ? "bg-[#fef2f2] text-[#7f1d1d]" : "bg-[#ecfdf5] text-[#065f46]",
+            ].join(" ")}
+          >
+            {garbage ? "Garbage" : "Done"}
+          </div>
+          {payload.artifact ? (
+            <div className="mt-4 inline-block rounded bg-white px-2 py-1 text-[13px] ring-1 ring-black/10">
+              {payload.artifact}
+            </div>
+          ) : null}
+          {onAdvance ? (
+            <div className="mt-6">
+              <button
+                type="button"
+                onClick={onAdvance}
+                className="rounded-lg bg-white px-3 py-2 text-[13px] font-semibold ring-1 ring-black/10"
+              >
+                Replay
+              </button>
+            </div>
+          ) : null}
         </div>
-      </Screen>
+      </Shell>
     );
   }
 
   return null;
+}
+
+function ThreadScreen({
+  payload,
+  onGo,
+}: {
+  payload: RoomsPayload;
+  onGo: (id: string) => void;
+}) {
+  const people = (payload.people as Talk[]) ?? [];
+  const [personId, setPersonId] = useState(payload.youId ?? "jordan");
+  const selected = people.find((person) => person.id === personId) ?? people[0];
+  const steps = (payload.steps as StepState[]) ?? [];
+  return (
+    <Shell nav={payload.nav} onGo={onGo} title={payload.mission ?? "Mission"}>
+      <div className="grid h-full grid-cols-[240px_minmax(0,1fr)]">
+        <aside className="border-r border-black/5 px-4 py-4">
+          <div className="text-[12px] text-[#78716c]">
+            {payload.room} · {payload.book}
+          </div>
+          <ol className="mt-3 space-y-1.5">
+            {steps.map((step) => (
+              <li
+                key={step.label}
+                className={[
+                  "rounded-lg px-2.5 py-1.5 text-[13px]",
+                  step.state === "now"
+                    ? "bg-[#065f46] font-semibold text-white"
+                    : step.state === "done"
+                      ? "bg-[#ecfdf5] text-[#065f46]"
+                      : "bg-white text-[#44403c] ring-1 ring-black/10",
+                ].join(" ")}
+              >
+                {step.label}
+              </li>
+            ))}
+          </ol>
+          <div className="mt-4 flex flex-col gap-1.5">
+            {(payload.artifacts ?? []).map((artifact) => (
+              <span
+                key={artifact}
+                className="rounded bg-white px-2 py-1 text-[12px] ring-1 ring-black/10"
+              >
+                {artifact}
+              </span>
+            ))}
+          </div>
+        </aside>
+        <section className="px-6 py-4">
+          <div className="flex gap-2">
+            {people.map((person) => {
+              const on = person.id === selected?.id;
+              return (
+                <button
+                  key={person.id}
+                  type="button"
+                  onClick={() => setPersonId(person.id)}
+                  className={[
+                    "rounded-lg px-3 py-2 text-left ring-1",
+                    on ? "bg-[#ecfdf5] ring-[#065f46]" : "bg-white ring-black/10",
+                  ].join(" ")}
+                >
+                  <span className="block text-[13px] font-semibold">{person.name}</span>
+                  <span className="block text-[10px] uppercase tracking-wide text-[#78716c]">
+                    {person.role} · {person.lang}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          {selected ? (
+            <div key={selected.id} className="mt-4 max-w-xl space-y-3">
+              <div className="rounded-xl bg-white px-3 py-2 ring-1 ring-black/5">
+                <div className="text-[11px] font-semibold text-[#065f46]">
+                  Ada · {selected.lang}
+                </div>
+                <p className="mt-1 text-[14px] leading-relaxed">{selected.agent}</p>
+              </div>
+              <Composer person={selected} />
+            </div>
+          ) : null}
+        </section>
+      </div>
+    </Shell>
+  );
+}
+
+function CreateBody({
+  prompt,
+  roomOpts,
+  bookOpts,
+  room,
+  book,
+  onRoom,
+  onBook,
+  onStart,
+}: {
+  prompt: string;
+  roomOpts: RoomOpt[];
+  bookOpts: BookOpt[];
+  room: RoomOpt;
+  book: BookOpt;
+  onRoom: (id: string) => void;
+  onBook: (id: string) => void;
+  onStart: () => void;
+}) {
+  const typed = useTypewriter(prompt);
+  return (
+    <div className="grid gap-6 px-6 py-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#78716c]">
+          Prompt
+        </div>
+        <div className="mt-2 min-h-[88px] rounded-xl bg-white px-3 py-3 text-[15px] leading-relaxed ring-1 ring-black/10">
+          <span>{typed.shown}</span>
+          {typed.done ? null : (
+            <span className="ml-0.5 inline-block h-4 w-px translate-y-0.5 animate-soft-pulse bg-[#1c1917]" />
+          )}
+        </div>
+        <div className="mt-5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#78716c]">
+          Playbook
+        </div>
+        <div className="mt-2 flex flex-col gap-2">
+          {bookOpts.map((item) => {
+            const on = item.id === book.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onBook(item.id)}
+                className={[
+                  "rounded-xl px-3 py-2 text-left ring-1",
+                  on ? "bg-[#1c1917] text-white ring-[#1c1917]" : "bg-white ring-black/10",
+                ].join(" ")}
+              >
+                <span className="block text-[14px] font-semibold">{item.name}</span>
+                <span className={["text-[12px]", on ? "text-white/70" : "text-[#78716c]"].join(" ")}>
+                  {item.steps.join(" → ")}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+      <div>
+        <div className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#78716c]">
+          Room
+        </div>
+        <div className="mt-2 flex flex-col gap-2">
+          {roomOpts.map((item) => {
+            const on = item.id === room.id;
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => onRoom(item.id)}
+                className={[
+                  "rounded-xl px-3 py-2 text-left ring-1",
+                  on ? "bg-[#ecfdf5] ring-[#065f46]" : "bg-white ring-black/10",
+                ].join(" ")}
+              >
+                <span className="block text-[14px] font-semibold">{item.name}</span>
+                <span className="text-[12px] text-[#78716c]">{item.context}</span>
+              </button>
+            );
+          })}
+        </div>
+        <button
+          type="button"
+          disabled={!typed.done}
+          onClick={onStart}
+          className="mt-4 w-full rounded-lg bg-[#065f46] px-3 py-2.5 text-[14px] font-semibold text-white disabled:opacity-40"
+        >
+          Start · {room.name}
+        </button>
+      </div>
+    </div>
+  );
 }

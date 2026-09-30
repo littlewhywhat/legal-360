@@ -128,10 +128,34 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     [scene.choices],
   );
 
-  return (
-    <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
-      <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
+  const desktop = scene.app === "rooms";
 
+  return (
+    <div
+      className={
+        desktop
+          ? "flex w-full flex-1 flex-col gap-4 px-6 py-6"
+          : "flex w-full flex-1 flex-col items-center gap-6 py-6"
+      }
+    >
+      <div className={desktop ? "mx-auto w-full max-w-6xl" : undefined}>
+        <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
+      </div>
+
+      {desktop ? (
+        <div className="mx-auto h-[720px] w-full max-w-6xl overflow-hidden rounded-2xl border border-white/10 bg-[#f4f3ef] shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+          <RoomsScene
+            key={scene.id}
+            payload={scene.payload as never}
+            choices={scene.choices}
+            onChoice={onChoice}
+            onAdvance={scene.next ? advance : undefined}
+            onGo={go}
+          />
+        </div>
+      ) : null}
+
+      {desktop ? null : (
       <PhoneFrame
         deviceLabel={deviceLabel(scene)}
         chrome={
@@ -182,23 +206,16 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
             onBack={canBack ? back : undefined}
           />
         ) : null}
-        {scene.app === "rooms" ? (
-          <RoomsScene
-            key={scene.id}
-            payload={scene.payload as never}
-            choices={scene.choices}
-            onChoice={onChoice}
-            onAdvance={scene.next ? advance : undefined}
-            onGo={go}
-          />
-        ) : null}
       </PhoneFrame>
+      )}
 
-      <p className="max-w-sm px-4 text-center text-sm text-[var(--stage-muted)]">
-        {scene.hint}
-      </p>
+      {desktop || !scene.hint ? null : (
+        <p className="max-w-sm px-4 text-center text-sm text-[var(--stage-muted)]">
+          {scene.hint}
+        </p>
+      )}
 
-      <div className="flex items-center gap-2">
+      <div className={desktop ? "flex items-center justify-center gap-2" : "flex items-center gap-2"}>
         <button
           type="button"
           onClick={back}
