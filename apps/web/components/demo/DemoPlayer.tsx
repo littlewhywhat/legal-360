@@ -10,6 +10,8 @@ import { SlackScene } from "./SlackScene";
 import { DocsFlash } from "./DocsFlash";
 import { SystemBeat } from "./SystemBeat";
 import { AuroraScene } from "./AuroraScene";
+import { RoomScene } from "./RoomScene";
+import type { RoomPayload } from "@cases/room-mission";
 
 function deviceLabel(scene: Scene): string {
   switch (scene.device) {
@@ -35,6 +37,20 @@ function sceneHref(caseId: string, sceneId: string, firstSceneId: string): strin
   return `/${caseId}/${sceneId}/`;
 }
 
+const sceneStacks = new Map<string, string[]>();
+
+function rememberedStack(caseId: string, sceneId: string): string[] {
+  if (typeof window === "undefined") return [sceneId];
+  const prev = sceneStacks.get(caseId);
+  if (prev && prev[prev.length - 1] === sceneId) return prev;
+  return [sceneId];
+}
+
+function rememberStack(caseId: string, stack: string[]) {
+  if (typeof window === "undefined") return;
+  sceneStacks.set(caseId, stack);
+}
+
 export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -48,8 +64,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     (fromQuery && sceneById[fromQuery] && fromQuery) ||
     firstSceneId;
   const scene = sceneById[sceneId];
-  const stackRef = useRef<string[]>([sceneId]);
-  const [canBack, setCanBack] = useState(false);
+  const stackRef = useRef<string[] | null>(null);
+  if (stackRef.current === null) {
+    stackRef.current = rememberedStack(meta.id, sceneId);
+  }
+  const [canBack, setCanBack] = useState(() => rememberedStack(meta.id, sceneId).length > 1);
+  const [playing, setPlaying] = useState(false);
 
   const navigate = useCallback(
     (nextId: string) => {
@@ -61,28 +81,34 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   const go = useCallback(
     (nextId: string) => {
       if (!sceneById[nextId]) return;
+      const stack = stackRef.current ?? [sceneId];
       if (nextId === firstSceneId) {
         stackRef.current = [firstSceneId];
+        rememberStack(meta.id, stackRef.current);
         setCanBack(false);
+        setPlaying(false);
         navigate(nextId);
         return;
       }
-      const top = stackRef.current[stackRef.current.length - 1];
+      const top = stack[stack.length - 1];
       if (nextId !== top) {
-        stackRef.current = [...stackRef.current, nextId];
+        stackRef.current = [...stack, nextId];
+        rememberStack(meta.id, stackRef.current);
         setCanBack(stackRef.current.length > 1);
       }
       navigate(nextId);
     },
-    [firstSceneId, navigate, sceneById],
+    [firstSceneId, meta.id, navigate, sceneById, sceneId],
   );
 
   const back = useCallback(() => {
-    if (stackRef.current.length < 2) return;
+    setPlaying(false);
+    if (!stackRef.current || stackRef.current.length < 2) return;
     stackRef.current = stackRef.current.slice(0, -1);
+    rememberStack(meta.id, stackRef.current);
     setCanBack(stackRef.current.length > 1);
     navigate(stackRef.current[stackRef.current.length - 1]);
-  }, [navigate]);
+  }, [meta.id, navigate]);
 
   const advance = useCallback(() => {
     if (scene.next) go(scene.next);
@@ -98,7 +124,7 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft" || e.key === "Backspace") {
-        if (stackRef.current.length > 1) {
+        if ((stackRef.current?.length ?? 0) > 1) {
           e.preventDefault();
           back();
         }
@@ -107,8 +133,12 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         const hasBlockingChoices =
           !!scene.choices &&
           scene.choices.length > 0 &&
-          scene.app !== "email";
-        if (scene.next && !hasBlockingChoices) {
+          scene.app !== "email" &&
+          !(scene.app === "room" && scene.choices.length === 1);
+        if (scene.app === "room" && scene.choices?.length === 1) {
+          e.preventDefault();
+          onChoice(scene.choices[0]);
+        } else if (scene.next && !hasBlockingChoices) {
           e.preventDefault();
           advance();
         }
@@ -120,70 +150,95 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [advance, back, firstSceneId, go, scene]);
+  }, [advance, back, firstSceneId, go, onChoice, scene]);
+
+  const nextBeat =
+    scene.app === "room" && !(scene.choices && scene.choices.length > 1)
+      ? (scene.next ?? scene.choices?.[0]?.next)
+      : undefined;
+
+  useEffect(() => {
+    if (!playing || !nextBeat) return;
+    const timer = window.setTimeout(() => go(nextBeat), 3600);
+    return () => window.clearTimeout(timer);
+  }, [go, nextBeat, playing]);
 
   const primaryChoice = useMemo(
     () => scene.choices?.find((c) => c.variant === "primary"),
     [scene.choices],
   );
 
+  const room = scene.app === "room";
+
   return (
-    <div className="flex w-full flex-1 flex-col items-center gap-6 py-6">
+    <div className={["flex w-full flex-1 flex-col items-center py-6", room ? "gap-4" : "gap-6"].join(" ")}>
       <StepStrip step={scene.step} total={scene.totalSteps} title={scene.title} />
 
-      <PhoneFrame
-        deviceLabel={deviceLabel(scene)}
-        chrome={
-          scene.app === "aurora"
-            ? (scene.payload as { mode?: string }).mode === "lock"
-              ? "overlay"
-              : "dark"
-            : "light"
-        }
-        clock={scene.app === "aurora" ? "21:14" : "9:41"}
-      >
-        {scene.app === "email" ? (
-          <EmailScene
-            payload={scene.payload as never}
-            onOpen={scene.next ? advance : undefined}
-            primaryLabel={primaryChoice?.label}
-            onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
-          />
-        ) : null}
-        {scene.app === "slack" ? (
-          <SlackScene
-            key={scene.id}
-            payload={scene.payload as never}
-            choices={scene.choices}
-            onChoice={onChoice}
-            onAdvance={scene.next ? advance : undefined}
-          />
-        ) : null}
-        {scene.app === "docs" ? (
-          <DocsFlash payload={scene.payload as never} onAdvance={advance} />
-        ) : null}
-        {scene.app === "system" ? (
-          <SystemBeat
-            payload={scene.payload as never}
-            primaryLabel={primaryChoice?.label}
-            onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
-            onAdvance={scene.next ? advance : undefined}
-          />
-        ) : null}
-        {scene.app === "aurora" ? (
-          <AuroraScene
-            key={scene.id}
-            payload={scene.payload as never}
-            choices={scene.choices}
-            onChoice={onChoice}
-            onAdvance={scene.next ? advance : undefined}
-            onGo={go}
-            onBack={canBack ? back : undefined}
-          />
-        ) : null}
-      </PhoneFrame>
+      {room ? (
+        <RoomScene
+          key={scene.id}
+          payload={scene.payload as RoomPayload}
+          choices={scene.choices}
+          onChoice={onChoice}
+          onAdvance={scene.next ? advance : undefined}
+        />
+      ) : null}
 
-      <p className="max-w-sm px-4 text-center text-sm text-[var(--stage-muted)]">
+      {room ? null : (
+        <PhoneFrame
+          deviceLabel={deviceLabel(scene)}
+          chrome={
+            scene.app === "aurora"
+              ? (scene.payload as { mode?: string }).mode === "lock"
+                ? "overlay"
+                : "dark"
+              : "light"
+          }
+          clock={scene.app === "aurora" ? "21:14" : "9:41"}
+        >
+          {scene.app === "email" ? (
+            <EmailScene
+              payload={scene.payload as never}
+              onOpen={scene.next ? advance : undefined}
+              primaryLabel={primaryChoice?.label}
+              onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
+            />
+          ) : null}
+          {scene.app === "slack" ? (
+            <SlackScene
+              key={scene.id}
+              payload={scene.payload as never}
+              choices={scene.choices}
+              onChoice={onChoice}
+              onAdvance={scene.next ? advance : undefined}
+            />
+          ) : null}
+          {scene.app === "docs" ? (
+            <DocsFlash payload={scene.payload as never} onAdvance={advance} />
+          ) : null}
+          {scene.app === "system" ? (
+            <SystemBeat
+              payload={scene.payload as never}
+              primaryLabel={primaryChoice?.label}
+              onPrimary={primaryChoice ? () => onChoice(primaryChoice) : undefined}
+              onAdvance={scene.next ? advance : undefined}
+            />
+          ) : null}
+          {scene.app === "aurora" ? (
+            <AuroraScene
+              key={scene.id}
+              payload={scene.payload as never}
+              choices={scene.choices}
+              onChoice={onChoice}
+              onAdvance={scene.next ? advance : undefined}
+              onGo={go}
+              onBack={canBack ? back : undefined}
+            />
+          ) : null}
+        </PhoneFrame>
+      )}
+
+      <p className={["px-4 text-center text-sm text-[var(--stage-muted)]", room ? "max-w-xl" : "max-w-sm"].join(" ")}>
         {scene.hint}
       </p>
 
@@ -196,6 +251,16 @@ export function DemoPlayer({ demoCase }: { demoCase: DemoCase }) {
         >
           Back
         </button>
+        {room ? (
+          <button
+            type="button"
+            onClick={() => setPlaying((value) => (nextBeat ? !value : false))}
+            disabled={!nextBeat}
+            className="rounded-full border border-[var(--stage-accent)]/40 bg-[var(--stage-accent)]/15 px-3.5 py-1.5 text-[12px] text-[var(--stage-fg)] disabled:cursor-default disabled:opacity-30"
+          >
+            {playing && nextBeat ? "Pause" : "Play"}
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => go(firstSceneId)}
