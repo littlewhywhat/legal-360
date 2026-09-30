@@ -25,7 +25,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   .animate-slide-up,
-  .animate-banner-in {
+  .animate-banner-in,
+  .room-pop,
+  .room-insert,
+  .room-stamp,
+  .room-push,
+  .room-pulse {
     animation: none !important;
   }
 }
@@ -58,6 +63,84 @@
 
 .animate-banner-in {
   animation: banner-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.18s both;
+}
+
+@keyframes room-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-insert {
+  from {
+    opacity: 0;
+    transform: translateX(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-stamp {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(-14deg) scale(1.4);
+  }
+  70% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-8deg) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(-8deg) scale(1);
+  }
+}
+
+@keyframes room-push {
+  from {
+    opacity: 0;
+    transform: translateY(-18px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes room-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(5, 150, 105, 0.45);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(5, 150, 105, 0);
+  }
+}
+
+.room-pop {
+  animation: room-pop 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-insert {
+  animation: room-insert 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-stamp {
+  animation: room-stamp 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.12s both;
+}
+
+.room-push {
+  animation: room-push 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.room-pulse {
+  animation: room-pulse 1.5s ease-out infinite;
 }
 
 body {
