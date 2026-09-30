@@ -1,7 +1,5 @@
-# Rooms desk
+# Insight column
 
-Three full windows: Mira (PO), Lea (UX), Adam (Dev). Each window is that person's list and the open mission.
+Two desks, Tereza and Owen. Room Portal. Kit is already on Portal theme.
 
-A room is a team space: one context, one stakeholder set, one agent pool. Missions live inside it. The list is personal: QQ, DQ, Stakeholder.
-
-QQ pushes. DQ sits in the list. Stakeholder means you are on the mission and it is not waiting on you.
+Play walks one mission: Tereza answers Ada in Czech, the card lands in Next, Owen takes the DQ, Kit writes the route, Tereza adds Empty insight, then Accept.

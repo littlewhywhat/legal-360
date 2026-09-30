@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import {
   BOOKS,
+  LAST_BEAT,
   PEOPLE,
   RIGHT_TABS,
   addCheckpoint,
@@ -10,12 +11,15 @@ import {
   bucket,
   closeMission,
   createMission,
-  createWorld,
+  focusAt,
   openingLine,
   reply,
   stepRunning,
   toggleTodo,
+  worldAt,
   type Artifact,
+  type Board,
+  type DeskFocus,
   type FilterId,
   type Mission,
   type PersonId,
@@ -34,7 +38,7 @@ const TAB_LABEL: Record<RightTab, string> = {
   files: "Files",
   changes: "Changes",
   terminal: "Terminal",
-  browser: "Browser",
+  browser: "Desktop",
 };
 
 type Pane = {
@@ -178,7 +182,7 @@ function CreateDialog({
   onClose: () => void;
   onCreate: (roomId: string, title: string, bookId: string) => void;
 }) {
-  const [roomId, setRoomId] = useState("product");
+  const [roomId, setRoomId] = useState("portal");
   const [title, setTitle] = useState("");
   const [bookId, setBookId] = useState(BOOKS[0].id);
 
@@ -200,8 +204,7 @@ function CreateDialog({
             onChange={(event) => setRoomId(event.target.value)}
             className="mt-1 w-full rounded-md border border-[#e4e4e4] bg-white px-2 py-1.5 text-[12px] normal-case tracking-normal text-[#1c1c1c]"
           >
-            <option value="product">Product</option>
-            <option value="activation">Activation</option>
+            <option value="portal">Portal</option>
           </select>
         </label>
         <label className="mt-2 block text-[10px] font-medium uppercase tracking-wide text-[#6b6b6b]">
@@ -250,13 +253,34 @@ function ArtifactCard({ artifact }: { artifact: Artifact }) {
   );
 }
 
+function panesFrom(focus: Record<PersonId, DeskFocus>): Record<PersonId, Pane> {
+  return {
+    tereza: { ...blankPane("tereza"), ...focus.tereza, view: "threads", roomId: null, creating: false },
+    owen: { ...blankPane("owen"), ...focus.owen, view: "threads", roomId: null, creating: false },
+  };
+}
+
 export function AgentDesk() {
-  const [world, setWorld] = useState<World>(() => createWorld());
-  const [panes, setPanes] = useState<Record<PersonId, Pane>>({
-    po: blankPane("po"),
-    ux: blankPane("ux"),
-    dev: blankPane("dev"),
-  });
+  const [beat, setBeat] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const [world, setWorld] = useState<World>(() => worldAt(0));
+  const [panes, setPanes] = useState<Record<PersonId, Pane>>(() => panesFrom(focusAt(0)));
+
+  useEffect(() => {
+    setWorld(worldAt(beat));
+    setPanes(panesFrom(focusAt(beat)));
+  }, [beat]);
+
+  useEffect(() => {
+    if (!playing) return;
+    if (beat >= LAST_BEAT) {
+      setPlaying(false);
+      return;
+    }
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const timer = window.setTimeout(() => setBeat((value) => Math.min(LAST_BEAT, value + 1)), reduced ? 0 : 3200);
+    return () => window.clearTimeout(timer);
+  }, [beat, playing]);
 
   const runningKey = world.missions
     .filter((mission) => mission.running)
@@ -267,11 +291,11 @@ export function AgentDesk() {
     .join("|");
 
   useEffect(() => {
-    if (!runningKey) return;
+    if (!runningKey || playing) return;
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const timer = window.setTimeout(() => setWorld((current) => stepRunning(current)), reduced ? 0 : 2600);
     return () => window.clearTimeout(timer);
-  }, [runningKey]);
+  }, [playing, runningKey]);
 
   const patch = (person: PersonId, partial: Partial<Pane>) => {
     setPanes((current) => ({ ...current, [person]: { ...current[person], ...partial } }));
@@ -298,7 +322,8 @@ export function AgentDesk() {
   };
 
   return (
-    <div className="grid min-h-0 w-full min-w-[1100px] flex-1 grid-cols-3 gap-2">
+    <div className="flex min-h-0 w-full flex-1 flex-col">
+    <div className="grid min-h-0 w-full min-w-[860px] flex-1 grid-cols-2 gap-2">
       {PEOPLE.map((person) => (
         <Window
           key={person.id}
@@ -318,6 +343,21 @@ export function AgentDesk() {
           onClose={(missionId, status) => setWorld((current) => closeMission(current, missionId, status))}
         />
       ))}
+    </div>
+    <div className="flex shrink-0 items-center justify-center gap-2 py-2">
+      <button type="button" onClick={() => { if (beat >= LAST_BEAT) setBeat(0); setPlaying(true); }} className="rounded-full bg-white px-3 py-1 text-[12px] font-medium text-[#1c1c1c]">
+        Play
+      </button>
+      <button type="button" onClick={() => setPlaying(false)} className="rounded-full bg-white/15 px-3 py-1 text-[12px] text-white">
+        Pause
+      </button>
+      <button type="button" onClick={() => { setPlaying(false); setBeat((value) => Math.min(LAST_BEAT, value + 1)); }} className="rounded-full bg-white/15 px-3 py-1 text-[12px] text-white">
+        Next
+      </button>
+      <button type="button" onClick={() => { setPlaying(false); setBeat(0); }} className="rounded-full bg-white/15 px-3 py-1 text-[12px] text-white">
+        Reset
+      </button>
+    </div>
     </div>
   );
 }
@@ -350,7 +390,9 @@ function Window({
   const who = personById(person);
   const mission = world.missions.find((item) => item.id === pane.missionId) ?? null;
   const room = world.rooms.find((item) => item.id === (pane.view === "room" ? pane.roomId : mission?.roomId));
-  const rows = world.missions.filter((item) => bucket(item, person) === pane.filter);
+  const rows = world.missions.filter(
+    (item) => bucket(item, person) === pane.filter || Boolean(item.agentId),
+  );
 
   return (
     <section className="relative flex min-h-0 min-w-0 flex-col overflow-hidden rounded-xl border border-black/10 bg-white text-[#1c1c1c] shadow-[0_16px_50px_rgba(0,0,0,0.28)]">
@@ -640,12 +682,15 @@ function MissionBody({
         <div className="min-h-0 flex-1 space-y-1.5 overflow-y-auto px-2.5 py-2">
           {mission?.chats[thread].map((line) => (
             <p
-              key={line.id}
+              key={`${line.id}-${line.fresh ? "live" : "set"}`}
               className={[
                 "max-w-[95%] rounded-lg px-2 py-1.5 text-[12px] leading-snug",
                 line.from === "agent" ? "bg-[#f4f4f4] text-[#222]" : "ml-auto bg-[#1c1c1c] text-white",
               ].join(" ")}
             >
+              <span className="mb-0.5 block text-[10px] opacity-60">
+                {line.from === "agent" ? line.agentName ?? "Ada" : personById(line.from).name}
+              </span>
               <Typed text={line.text} live={line.fresh} />
             </p>
           ))}
@@ -670,7 +715,7 @@ function MissionBody({
         ) : null}
         {mission && thread === person ? (
           <Composer
-            key={`${mission.id}-${person}`}
+            key={`${mission.id}-${person}-${mission.drafts[person] ?? ""}`}
             script={mission.drafts[person]}
             onSend={onReply}
           />
@@ -819,18 +864,36 @@ function RightPane({
     return <pre className="whitespace-pre-wrap font-mono text-[10px] leading-relaxed text-[#333]">{mission.terminal}</pre>;
   }
 
+  return <Board phase={mission.board} cursor={Boolean(mission.agentId)} />;
+}
+
+function Board({ phase, cursor }: { phase: Board; cursor: boolean }) {
   return (
-    <div className="relative h-full min-h-36 rounded-md border border-[#ececec] bg-white p-2">
-      <div className="text-[10px] text-[#999]">pricing</div>
-      <div className="mt-2 rounded-md border border-[#1c1c1c] px-2 py-2">
-        <div className="text-[10px] uppercase text-[#888]">Annual</div>
-        <div className="text-[13px] font-semibold">$96</div>
+    <div className="relative min-h-36 rounded-md border border-[#ececec] bg-white p-2">
+      <div className="text-[10px] text-[#999]">insight</div>
+      {phase === "idle" ? (
+        <div className="mt-2 inline-flex rounded-md bg-[#1c1c1c] px-2 py-1 text-[11px] text-white">Add card</div>
+      ) : null}
+      <div className="mt-2 grid grid-cols-2 gap-1">
+        <div className="rounded-md border border-dashed border-[#ddd] px-1.5 py-1">
+          <div className="text-[10px] uppercase text-[#aaa]">Now</div>
+        </div>
+        <div className="rounded-md border border-[#e4e4e4] px-1.5 py-1">
+          <div className="text-[10px] uppercase text-[#888]">Next</div>
+          {phase !== "idle" ? (
+            <div className="mt-1 rounded bg-[#f6f6f6] px-1 py-1 text-[10px] leading-snug">
+              “Ship the quote with the card.”
+            </div>
+          ) : null}
+          {phase === "empty" ? (
+            <div className="mt-1 rounded border border-[#1c1c1c] px-1 py-1 text-[10px]">
+              <div className="text-[#999]">No quote</div>
+              <div>insight/84</div>
+            </div>
+          ) : null}
+        </div>
       </div>
-      <div className="mt-1.5 rounded-md border border-[#e4e4e4] px-2 py-2">
-        <div className="text-[10px] uppercase text-[#aaa]">Month</div>
-        <div className="text-[12px] text-[#666]">$12</div>
-      </div>
-      {mission.agentId ? <DotCursor roam /> : null}
+      {cursor ? <DotCursor roam /> : null}
     </div>
   );
 }
