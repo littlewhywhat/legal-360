@@ -23,21 +23,35 @@ export default async function CasePage({
   const pathSceneId = scene?.[0];
   if (pathSceneId && !demoCase.sceneById[pathSceneId]) notFound();
 
+  const desk = caseId === "room-mission";
+
   return (
-    <main className="flex flex-1 flex-col">
-      <header className="px-4 pt-8 text-center">
-        <p className="text-xs text-[var(--stage-muted)]">
-          <Link href="/" className="underline-offset-2 hover:underline">
+    <main className={desk ? "flex min-h-screen flex-col" : "flex flex-1 flex-col"}>
+      {desk ? (
+        <header className="flex items-baseline justify-between px-4 py-3">
+          <Link href="/" className="text-xs text-[var(--stage-muted)] underline-offset-2 hover:underline">
             All demos
           </Link>
-        </p>
-        <p className="mt-2 font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--stage-fg)] sm:text-4xl">
-          {demoCase.meta.title}
-        </p>
-        <p className="mt-2 text-sm text-[var(--stage-muted)]">
-          {demoCase.meta.tagline}
-        </p>
-      </header>
+          <p className="font-[family-name:var(--font-display)] text-lg font-semibold text-[var(--stage-fg)]">
+            {demoCase.meta.title}
+          </p>
+          <span className="w-16" />
+        </header>
+      ) : (
+        <header className="px-4 pt-8 text-center">
+          <p className="text-xs text-[var(--stage-muted)]">
+            <Link href="/" className="underline-offset-2 hover:underline">
+              All demos
+            </Link>
+          </p>
+          <p className="mt-2 font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--stage-fg)] sm:text-4xl">
+            {demoCase.meta.title}
+          </p>
+          <p className="mt-2 text-sm text-[var(--stage-muted)]">
+            {demoCase.meta.tagline}
+          </p>
+        </header>
+      )}
       <Suspense
         fallback={
           <div className="flex flex-1 items-center justify-center text-sm text-[var(--stage-muted)]">
