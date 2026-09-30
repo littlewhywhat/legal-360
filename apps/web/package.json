@@ -11,6 +11,7 @@
   "dependencies": {
     "@cases/aurora": "workspace:*",
     "@cases/legal-360": "workspace:*",
+    "@cases/rooms": "workspace:*",
     "@demo/runtime": "workspace:*",
     "next": "16.3.0",
     "react": "19.2.8",
