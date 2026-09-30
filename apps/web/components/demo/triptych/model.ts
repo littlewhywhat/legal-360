@@ -1,4 +1,4 @@
-export type PersonId = "mira" | "lea" | "adam";
+export type PersonId = "mira" | "lea";
 export type FilterId = "qq" | "dq" | "stakeholder";
 export type Wait = "qq" | "dq";
 export type ArtifactKind = "decision" | "spec" | "design" | "diff" | "verification" | "copy";
@@ -88,6 +88,7 @@ export type Column = {
   pushedId: string | null;
   adding: boolean;
   checkpoint: string;
+  chatTab: PersonId;
 };
 
 export type World = {
@@ -100,7 +101,6 @@ export type World = {
 export const PEOPLE: Person[] = [
   { id: "mira", name: "Mira", role: "Product owner", lang: "en" },
   { id: "lea", name: "Lea", role: "UX designer", lang: "cs" },
-  { id: "adam", name: "Adam", role: "Dev", lang: "ru" },
 ];
 
 export const ROOMS: Room[] = [
@@ -124,7 +124,7 @@ export const FILTERS: { id: FilterId; label: string }[] = [
   { id: "stakeholder", label: "Stakeholder" },
 ];
 
-const EMPTY_CHATS = (): Record<PersonId, ChatLine[]> => ({ mira: [], lea: [], adam: [] });
+const EMPTY_CHATS = (): Record<PersonId, ChatLine[]> => ({ mira: [], lea: [] });
 
 let seq = 1;
 export function uid(prefix: string) {
@@ -141,7 +141,7 @@ function stepsFrom(labels: string[], current: string): Step[] {
   }));
 }
 
-function column(filter: FilterId): Column {
+function column(person: PersonId, filter: FilterId): Column {
   return {
     screen: "list",
     filter,
@@ -153,6 +153,7 @@ function column(filter: FilterId): Column {
     pushedId: null,
     adding: false,
     checkpoint: "",
+    chatTab: person,
   };
 }
 
@@ -176,16 +177,15 @@ export function createWorld(): World {
   return {
     spot: null,
     agents: [
-      { id: "nova", name: "Nova", roomId: "product", mode: "busy", missionId: "flag" },
+      { id: "nova", name: "Nova", roomId: "product", mode: "free" },
       { id: "kit", name: "Kit", roomId: "product", mode: "busy", missionId: "prorate" },
       { id: "lumen", name: "Lumen", roomId: "product", mode: "free" },
       { id: "io", name: "Io", roomId: "activation", mode: "busy", missionId: "empty" },
       { id: "nia", name: "Nia", roomId: "activation", mode: "offline" },
     ],
     columns: {
-      mira: column("dq"),
-      lea: column("qq"),
-      adam: column("qq"),
+      mira: column("mira", "dq"),
+      lea: column("lea", "qq"),
     },
     missions: [
       mission({
@@ -211,7 +211,7 @@ export function createWorld(): World {
         id: "prorate",
         roomId: "product",
         title: "Prorate plan changes",
-        creatorId: "adam",
+        creatorId: "mira",
         steps: stepsFrom(["Spec", "Implement", "Verify"], "Implement"),
         todos: [
           { id: "p1", text: "Upgrade mid-cycle", done: false },
@@ -223,25 +223,6 @@ export function createWorld(): World {
         chats: {
           mira: [{ id: "p-m", from: "mira", text: "Ship proration with the pricing change." }],
           lea: [{ id: "p-l", from: "lea", text: "Částku ukaž až v souhrnu objednávky." }],
-          adam: [
-            { id: "p-a1", from: "agent", text: "Пишу апгрейд в середине цикла." },
-            { id: "p-a2", from: "adam", text: "Считаю по дням." },
-          ],
-        },
-      }),
-      mission({
-        id: "flag",
-        roomId: "product",
-        title: "Checkout rounding",
-        creatorId: "adam",
-        steps: stepsFrom(["Spec", "Decide", "Ship"], "Decide"),
-        todos: [],
-        artifacts: [],
-        waits: { adam: "qq" },
-        agentId: "nova",
-        chats: {
-          ...EMPTY_CHATS(),
-          adam: [{ id: "f-a", from: "agent", text: "Округлять пропорцию до дня или до цента?", tag: "qq" }],
         },
       }),
       mission({
@@ -278,15 +259,15 @@ export function createWorld(): World {
         id: "checklist",
         roomId: "activation",
         title: "Onboarding checklist",
-        creatorId: "adam",
+        creatorId: "lea",
         steps: stepsFrom(["Draft", "Review", "Ship"], "Review"),
         todos: [{ id: "c1", text: "First-run steps", done: false }],
         artifacts: [],
-        waits: { adam: "dq" },
+        waits: {},
         agentId: null,
         chats: {
-          ...EMPTY_CHATS(),
-          adam: [{ id: "c-a", from: "agent", text: "Три шага в чеклисте или пять?", tag: "dq" }],
+          mira: [{ id: "c-m", from: "mira", text: "Three steps is enough for the first run." }],
+          lea: [{ id: "c-l", from: "lea", text: "Tři kroky. Ikona u každého." }],
         },
       }),
     ],
@@ -351,12 +332,19 @@ function patchColumn(world: World, person: PersonId, patch: Partial<Column>): Wo
   };
 }
 
+export function setChatTab(world: World, person: PersonId, chatTab: PersonId): World {
+  return patchColumn(world, person, { chatTab });
+}
+
 export function setFilter(world: World, person: PersonId, filter: FilterId): World {
   return patchColumn(world, person, { filter });
 }
 
 export function openMission(world: World, person: PersonId, missionId: string): World {
-  return { ...patchColumn(world, person, { screen: "mission", missionId, modal: false, adding: false }), spot: person };
+  return {
+    ...patchColumn(world, person, { screen: "mission", missionId, modal: false, adding: false, chatTab: person }),
+    spot: person,
+  };
 }
 
 export function showList(world: World, person: PersonId): World {
